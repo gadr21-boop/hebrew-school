@@ -1,0 +1,46 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff8fc0"/>
+      <stop offset="0.55" stop-color="#ff5fa2"/>
+      <stop offset="1" stop-color="#a18cd1"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+  <!-- stars -->
+  <g fill="#fff" opacity="0.9">
+    <polygon points="96,92 104,114 127,114 109,128 116,150 96,137 76,150 83,128 65,114 88,114"/>
+    <polygon points="420,120 426,138 444,138 430,149 435,167 420,156 405,167 410,149 396,138 414,138" opacity="0.8"/>
+    <circle cx="430" cy="350" r="6"/>
+    <circle cx="78" cy="330" r="5" opacity="0.8"/>
+  </g>
+  <!-- fox mascot (Bubi) -->
+  <g transform="translate(256,268) scale(3.0) translate(-50,-50)">
+    <polygon points="16,8 40,30 12,40" fill="#e8743b"/>
+    <polygon points="84,8 60,30 88,40" fill="#e8743b"/>
+    <polygon points="22,16 35,31 19,36" fill="#5a2e1a"/>
+    <polygon points="78,16 65,31 81,36" fill="#5a2e1a"/>
+    <path d="M50 22 C77 22 87 46 83 65 C79 83 64 93 50 93 C36 93 21 83 17 65 C13 46 23 22 50 22Z" fill="#f4844b"/>
+    <path d="M50 50 C67 50 79 61 81 71 C79 83 64 91 50 91 C36 91 21 83 19 71 C21 61 33 50 50 50Z" fill="#fff"/>
+    <ellipse cx="37" cy="55" rx="6" ry="7.5" fill="#2b1a12"/>
+    <ellipse cx="63" cy="55" rx="6" ry="7.5" fill="#2b1a12"/>
+    <circle cx="39" cy="53" r="2.2" fill="#fff"/>
+    <circle cx="65" cy="53" r="2.2" fill="#fff"/>
+    <path d="M50 67 l-6 -6 h12 z" fill="#2b1a12"/>
+    <path d="M50 67 q-9 9 -17 2" fill="none" stroke="#2b1a12" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M50 67 q9 9 17 2" fill="none" stroke="#2b1a12" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="28" cy="70" r="5" fill="#ff9aa2" opacity="0.65"/>
+    <circle cx="72" cy="70" r="5" fill="#ff9aa2" opacity="0.65"/>
+  </g>
+  <!-- Hebrew alef badge -->
+  <g transform="translate(372,372)">
+    <circle r="62" fill="#fff"/>
+    <circle r="62" fill="none" stroke="#ffd23f" stroke-width="7"/>
+    <text x="0" y="26" text-anchor="middle" font-family="Arial, sans-serif" font-size="84" font-weight="bold" fill="#6a5acd">א</text>
+  </g>
+</svg>
