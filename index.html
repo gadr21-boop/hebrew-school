@@ -2604,19 +2604,19 @@ function runGame(){ stopArcade(); curGame='run';
   const cv=gameCanvas('🦊 '+H('ריצת בּוּבּי','Bubi Run'),380,470, footHint(H('הקש על המסך לקפיצה · קפיצה כפולה באוויר','Tap to jump · double-jump in the air'))+`<button class="opt" id="jbtn" style="width:180px;height:52px;font-size:20px" onpointerdown="pfJump()">⬆️ ${H('קפיצה','Jump')}</button>`);
   if(!cv) return; const c=cv.getContext('2d'); const W=cv.width,Hh=cv.height; const ground=Hh-66;
   cv.addEventListener('pointerdown', pfJump);
-  pf={cv,c,W,Hh,ground, x:74,y:ground,vy:0,onGround:true,jumps:0, obs:[],stars:[], spd:3.4, score:0, tick:0, next:60, starNext:90, go:false, hill1:0,hill2:0, leg:0};
+  pf={cv,c,W,Hh,ground, x:74,y:ground,vy:0,onGround:true,jumps:0, obs:[],stars:[], spd:3.0, score:0, tick:0, next:140, starNext:90, go:false, hill1:0,hill2:0, leg:0};
   arcScore=0;
   pfT=setInterval(pfStep, 20);
 }
 function pfJump(){ if(!pf||pf.go) return; if(pf.onGround){ pf.vy=-11.6; pf.onGround=false; pf.jumps=1; tone(680,0,.08); } else if(pf.jumps<2){ pf.vy=-9.6; pf.jumps=2; tone(860,0,.08); } }
-function pfRock(){ return {x:pf.W+20, w:22+Math.floor(Math.random()*16), h:26+Math.floor(Math.random()*22)}; }
+function pfRock(){ return {x:pf.W+20, w:20+Math.floor(Math.random()*14), h:20+Math.floor(Math.random()*16)}; }
 function pfStep(){ const cv=document.getElementById('cv'); if(!cv){ stopArcade(); return; } const c=pf.c, W=pf.W, Hh=pf.Hh, g=pf.ground;
-  pf.tick++; if(pf.tick%140===0) pf.spd+=0.25;
+  pf.tick++; if(pf.tick%190===0 && pf.spd<7) pf.spd+=0.2;
   // פיזיקה
   pf.vy+=0.62; pf.y+=pf.vy; if(pf.y>=g){ pf.y=g; pf.vy=0; if(!pf.onGround){ pf.onGround=true; pf.jumps=0; } }
   pf.leg=(pf.leg+pf.spd)%16;
   // מכשולים
-  pf.next-=pf.spd; if(pf.next<=0){ pf.obs.push(pfRock()); pf.next=90+Math.random()*90 - Math.min(40,pf.spd*4); }
+  pf.next-=pf.spd; if(pf.next<=0){ pf.obs.push(pfRock()); pf.next=150+Math.random()*110 - Math.min(20,pf.spd*2); }
   pf.starNext-=pf.spd; if(pf.starNext<=0){ pf.stars.push({x:W+20,y:g-40-Math.random()*70,got:false}); pf.starNext=120+Math.random()*120; }
   pf.obs.forEach(o=>o.x-=pf.spd); pf.stars.forEach(s=>s.x-=pf.spd);
   pf.obs=pf.obs.filter(o=>o.x+o.w>-10); pf.stars=pf.stars.filter(s=>s.x>-20);
