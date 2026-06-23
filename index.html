@@ -346,11 +346,7 @@ function imgFallback(el,key){ try{ el.insertAdjacentHTML('afterend', artSVG(key)
 const KEY = "betSeferIvrit_v1";
 let data = null;
 function defaultData(){
-  return { current:null, voiceURI:null, lang:"he", profiles:{
-    yogev:{name:"יוגב", av:"🚀", stars:0, level:1, stats:{}},
-    ella:{name:"אלה", av:"🦄", stars:0, level:2, stats:{}},
-    savta:{name:"סבתא", av:"👵", stars:0, level:3, stats:{}}
-  }};
+  return { current:null, voiceURI:null, lang:"he", profiles:{} };
 }
 function load(){ try{ data = JSON.parse(localStorage.getItem(KEY)); }catch(e){ data=null; } if(!data||!data.profiles) data = defaultData(); lang = data.lang || "he";
   Object.keys(data.profiles).forEach(id=>{ const p=data.profiles[id]; if(!p.level) p.level=2; if(!p.stats) p.stats={};
@@ -390,6 +386,18 @@ function syncCreate(){ const c=genFamCode(); setFamCode(c); syncMsg(H('יוצר�
 function syncJoin(){ const el=document.getElementById('syncIn'); let c=(el?el.value:'').trim().toUpperCase(); if(c.length<4){ syncMsg(H('קוד קצר מדי','Code too short'),1); return; } setFamCode(c); syncMsg(H('מתחבר…','Linking…')); cloudPull().then(function(ok){ if(ok){ load(); syncMsg(H('חובר! ההתקדמות נטענה ✓','Linked! progress loaded ✓')); setTimeout(syncScreen,1000); } else { supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); syncMsg(H('המכשיר קושר לקוד','Device linked')); setTimeout(syncScreen,1000); } }); }
 function syncNow(){ syncMsg(H('מסנכרן…','Syncing…')); supaRpc('save_progress',{p_code:famCode(),p_data:data}).then(function(){ return cloudPull(); }).then(function(){ load(); syncMsg(H('סונכרן ✓','Synced ✓')); }).catch(function(){ syncMsg(H('שגיאת רשת','Network error'),1); }); }
 function syncUnlink(){ setFamCode(''); syncScreen(); }
+// ===== מסך פתיחה — זיהוי משפחה במכשיר חדש =====
+function welcomeMsg(m,err){ const e=document.getElementById('wcMsg'); if(e){ e.textContent=m; e.style.color=err?'#d64545':'#43a047'; } }
+function welcomeScreen(){ backTo=null;
+  app.innerHTML=`<div class="screen"><h1 style="margin-top:6vh">🏫 ${H('בית הספר לעברית','Hebrew School')}</h1><div class="subtitle">${H('ברוכים הבאים!','Welcome!')}</div>
+    <div class="card" style="max-width:430px;margin:18px auto"><div class="prompt" style="font-weight:bold;margin-bottom:16px">${H('בואו נגדיר את המכשיר','Set up this device')}</div>
+    <button class="menu-btn c2" style="width:100%;margin-bottom:18px" onclick="welcomeNew()"><span class="emoji">🆕</span>${H('משפחה חדשה','New family')}</button>
+    <div class="speak-hint" style="margin:6px 0 10px">${H('כבר יש קוד משפחה ממכשיר אחר?','Already have a family code?')}</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><input id="wcIn" placeholder="${H('קוד','Code')}" style="font-size:22px;padding:9px 12px;border-radius:12px;border:2px solid #cdb4ff;width:150px;text-align:center;text-transform:uppercase;direction:ltr;font-family:inherit"><button class="replay" style="margin:0;background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff;padding:10px 18px" onclick="welcomeJoin()">${H('חבר','Link')}</button></div>
+    <div id="wcMsg" style="margin-top:14px;font-weight:bold;min-height:20px"></div></div></div>`;
+}
+function welcomeNew(){ const c=genFamCode(); setFamCode(c); supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); addProfile(); }
+function welcomeJoin(){ const el=document.getElementById('wcIn'); let c=(el?el.value:'').trim().toUpperCase(); if(c.length<4){ welcomeMsg(H('קוד קצר מדי','Code too short'),1); return; } setFamCode(c); welcomeMsg(H('מתחבר…','Linking…')); cloudPull().then(function(ok){ if(ok){ load(); bootScreen(); } else { setFamCode(''); welcomeMsg(H('קוד לא נמצא — בדקו שוב, או "משפחה חדשה"','Code not found — check it, or use "New family"'),1); } }); }
 
 // ===== שפת ממשק (he/en) — משנה רק טקסט של שמות המשחקים וההוראות =====
 let lang = "he";
@@ -3053,8 +3061,9 @@ load();
 loadVoices();
 loadRecordings();
 if(window.speechSynthesis){ speechSynthesis.onvoiceschanged=()=>loadVoices(); }
-bootScreen();
-if(famCode()){ cloudPull().then(function(ok){ if(ok){ load(); bootScreen(); } }); }
+function appRoute(){ if(!famCode() && Object.keys(data.profiles||{}).length===0){ welcomeScreen(); } else { bootScreen(); } }
+appRoute();
+if(famCode()){ cloudPull().then(function(){ load(); appRoute(); }); }
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
 </script>
 </body>
