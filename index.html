@@ -396,7 +396,16 @@ function welcomeScreen(){ backTo=null;
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><input id="wcIn" placeholder="${H('קוד','Code')}" style="font-size:22px;padding:9px 12px;border-radius:12px;border:2px solid #cdb4ff;width:150px;text-align:center;text-transform:uppercase;direction:ltr;font-family:inherit"><button class="replay" style="margin:0;background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff;padding:10px 18px" onclick="welcomeJoin()">${H('חבר','Link')}</button></div>
     <div id="wcMsg" style="margin-top:14px;font-weight:bold;min-height:20px"></div></div></div>`;
 }
-function welcomeNew(){ const c=genFamCode(); setFamCode(c); supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); addProfile(); }
+function welcomeNew(){ const c=genFamCode(); setFamCode(c); supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); welcomeShowCode(c); }
+function welcomeShowCode(c){ backTo=null;
+  app.innerHTML=`<div class="screen"><div class="card" style="max-width:440px;margin:7vh auto">
+    <div class="prompt" style="font-weight:bold">🎉 ${H('המשפחה נוצרה!','Family created!')}</div>
+    <div class="speak-hint" style="margin:10px 0">${H('זה קוד המשפחה שלכם — רשמו אותו! צריך אותו כדי לחבר מכשירים נוספים ולשחזר.','This is your family code — write it down! You need it to link more devices and to recover.')}</div>
+    <div style="font-size:42px;font-weight:bold;letter-spacing:6px;color:#6a5acd;direction:ltr;background:#f2f0ff;border-radius:14px;padding:12px 8px;margin:6px 0">${c}</div>
+    <button class="replay" style="background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff;margin-top:14px" onclick="addProfile()">${H('רשמתי — הוסיפו ילד ▶','Got it — add a child ▶')}</button>
+    <div class="speak-hint" style="margin-top:14px;font-size:13px">${H('תמיד אפשר לראות אותו שוב: 🔒 הורים → ☁️ סנכרון','See it again anytime: 🔒 Parents → ☁️ Sync')}</div>
+  </div></div>`;
+}
 function welcomeJoin(){ const el=document.getElementById('wcIn'); let c=(el?el.value:'').trim().toUpperCase(); if(c.length<4){ welcomeMsg(H('קוד קצר מדי','Code too short'),1); return; } setFamCode(c); welcomeMsg(H('מתחבר…','Linking…')); cloudPull().then(function(ok){ if(ok){ load(); bootScreen(); } else { setFamCode(''); welcomeMsg(H('קוד לא נמצא — בדקו שוב, או "משפחה חדשה"','Code not found — check it, or use "New family"'),1); } }); }
 
 // ===== שפת ממשק (he/en) — משנה רק טקסט של שמות המשחקים וההוראות =====
