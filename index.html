@@ -541,21 +541,28 @@ function playNum(n){
   else { speak(nw(n)); }
 }
 // משמיע רצף קליפים מובנים בזה אחר זה (לקול עקבי במשפטי חשבון/שאלות)
-let _seqAudio=null, _clipAudio=null;
-function stopAudio(){ try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){} try{ if(_seqAudio){ _seqAudio.onended=null; _seqAudio.pause(); _seqAudio=null; } }catch(e){} try{ if(_clipAudio){ _clipAudio.pause(); _clipAudio=null; } }catch(e){} }
+let _seqAudio=null, _clipAudio=null, _seqStop=null, _seqGen=0;
+function _b64buf(durl){ const b=atob(durl.split(',')[1]); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u.buffer; }
+function _decode(ctx,ab){ return new Promise(function(res,rej){ try{ const p=ctx.decodeAudioData(ab,res,rej); if(p&&p.then) p.then(res,rej); }catch(e){ rej(e); } }); }
+function _trim(buf){ try{ const ch=buf.getChannelData(0), n=ch.length, thr=0.008, sr=buf.sampleRate; let s=0,e=n-1; while(s<n && Math.abs(ch[s])<thr) s++; while(e>s && Math.abs(ch[e])<thr) e--; const pad=Math.floor(0.012*sr); s=Math.max(0,s-pad); e=Math.min(n-1,e+pad); return { off:s/sr, dur:Math.max(0.05,(e-s)/sr) }; }catch(e){ return { off:0, dur:buf.duration }; } }
+function stopAudio(){ _seqGen++; try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){} try{ if(_seqStop) _seqStop(); }catch(e){} try{ if(_seqAudio){ _seqAudio.onended=null; _seqAudio.pause(); _seqAudio=null; } }catch(e){} try{ if(_clipAudio){ _clipAudio.pause(); _clipAudio=null; } }catch(e){} }
+function playSeqWA(keys,rate){ const ctx=getAC(); if(!ctx||!ctx.createBufferSource) return false; const myGen=++_seqGen;
+  Promise.all(keys.map(function(k){ try{ return _decode(ctx,_b64buf(window.BAKED_AUDIO[k])); }catch(e){ return Promise.resolve(null); } })).then(function(bufs){
+    if(myGen!==_seqGen) return;
+    const srcs=[]; let when=ctx.currentTime+0.06;
+    bufs.forEach(function(buf){ if(!buf) return; const tr=_trim(buf); const s=ctx.createBufferSource(); s.buffer=buf; try{ s.playbackRate.value=rate; }catch(e){} s.connect(ctx.destination); try{ s.start(when,tr.off,tr.dur); }catch(e){ try{ s.start(when); }catch(e2){} } srcs.push(s); when += tr.dur/rate + 0.02; });
+    _seqStop=function(){ srcs.forEach(function(s){ try{ s.stop(); }catch(e){} }); _seqStop=null; };
+  },function(){});
+  return true;
+}
 function playSeq(keys){
-  keys=(keys||[]).filter(k=>window.BAKED_AUDIO && window.BAKED_AUDIO[k]);
+  keys=(keys||[]).filter(function(k){ return window.BAKED_AUDIO && window.BAKED_AUDIO[k]; });
   if(!keys.length) return false;
   stopAudio();
   const rate = keys.length>1 ? 1.4 : 1.0;
-  const seq = keys.map(function(k){ const a=new Audio(window.BAKED_AUDIO[k]); a.playbackRate=rate; a.preload='auto'; try{ a.load(); }catch(e){} return a; });
+  if(keys.length>1 && (window.AudioContext||window.webkitAudioContext)){ try{ if(playSeqWA(keys,rate)) return true; }catch(e){} }
   let i=0;
-  function step(){ if(i>=seq.length){ _seqAudio=null; return; } const a=seq[i]; _seqAudio=a; i++;
-    let moved=false; function go(){ if(moved) return; moved=true; step(); }
-    a.onended=go; a.onerror=go;
-    try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){ return go(); }
-    const d=a.duration; if(i<seq.length && d && isFinite(d)){ setTimeout(go, Math.max(90,(d/(a.playbackRate||1)-0.16)*1000)); }
-  }
+  function step(){ if(i>=keys.length){ _seqAudio=null; return; } const a=new Audio(window.BAKED_AUDIO[keys[i]]); a.playbackRate=rate; _seqAudio=a; i++; a.onended=step; a.onerror=step; try{ a.play().catch(function(){}); }catch(e){ step(); } }
   step(); return true;
 }
 // הקראת תרגיל חשבון בקול Hila מחלקים מובנים: [a] ועוד/פחות [b] כמה זה/נשאר
