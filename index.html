@@ -445,7 +445,7 @@ const T = {
     sp_lesson:"📚 Lesson", lesson_sub:"First learn, then a short test, then games 🎮", l_learn_intro:"Let's learn 👇", l_gotit:"Got it ▶", l_explain:"Here's the answer:", lesson_test_intro:"Great! Now a short test", l_start_test:"Start ▶", lesson_reward:"Done! Now it's playtime", l_play_now:"Play now 🎮", ed_learn:"Learning time (minutes)" }
 };
 function t(k,vars){ let s=(T[lang]&&T[lang][k])||T.he[k]||k; if(vars){ for(const key in vars) s=s.split("{"+key+"}").join(vars[key]); } return s; }
-function setLang(l){ lang=l; data.lang=l; save(); home(); }
+function setLang(l){ lang=l; data.lang=l; save(); (typeof appRoute==='function'?appRoute:bootScreen)(); }
 function langToggle(){ return `<div class="lang-tog"><button class="${lang==='he'?'on':''}" onclick="setLang('he')">עב</button><button class="${lang==='en'?'on':''}" onclick="setLang('en')">EN</button></div>`; }
 function levelToggle(){ const L=lvl(); return `<div class="lang-tog" style="margin:0 auto 12px"><span style="padding:6px 6px;color:#999;font-size:14px">${t('lvl_label')}</span>${[1,2,3].map(x=>`<button class="${L===x?'on':''}" onclick="setLevel(${x})">${t('l'+x)}</button>`).join("")}</div>`; }
 function setLevel(L){ const p=prof(); if(p){ p.level=L; save(); } home(); }
