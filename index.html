@@ -547,16 +547,22 @@ function playSeq(keys){
   keys=(keys||[]).filter(k=>window.BAKED_AUDIO && window.BAKED_AUDIO[k]);
   if(!keys.length) return false;
   stopAudio();
-  const rate = keys.length>1 ? 1.35 : 1.0;
+  const rate = keys.length>1 ? 1.4 : 1.0;
+  const seq = keys.map(function(k){ const a=new Audio(window.BAKED_AUDIO[k]); a.playbackRate=rate; a.preload='auto'; try{ a.load(); }catch(e){} return a; });
   let i=0;
-  function next(){ if(i>=keys.length){ _seqAudio=null; return; } const a=new Audio(window.BAKED_AUDIO[keys[i]]); a.playbackRate=rate; _seqAudio=a; i++; a.onended=next; a.onerror=next; try{ a.play().catch(()=>{}); }catch(e){ next(); } }
-  next(); return true;
+  function step(){ if(i>=seq.length){ _seqAudio=null; return; } const a=seq[i]; _seqAudio=a; i++;
+    let moved=false; function go(){ if(moved) return; moved=true; step(); }
+    a.onended=go; a.onerror=go;
+    try{ a.currentTime=0; a.play().catch(function(){}); }catch(e){ return go(); }
+    const d=a.duration; if(i<seq.length && d && isFinite(d)){ setTimeout(go, Math.max(90,(d/(a.playbackRate||1)-0.16)*1000)); }
+  }
+  step(); return true;
 }
 // הקראת תרגיל חשבון בקול Hila מחלקים מובנים: [a] ועוד/פחות [b] כמה זה/נשאר
-function playMath(f){ if(!f) return; const op=f.op==='add'?'C:plus':'C:minus'; const end=f.op==='add'?'C:howmuch':'C:howleft';
+function playMath(f){ if(!f) return; const op=f.op==='add'?'C:plus':'C:minus'; const end='C:howmuch';
   if(!playSeq(['N:'+f.a, op, 'N:'+f.b, end])){ try{ speak(narrateMath(f)); }catch(e){} } }
 function playMathId(id){ playMath(nodeFact(id)); }
-function playMathFull(f){ if(!f) return; const op=f.op==='add'?'C:plus':'C:minus'; const end=f.op==='add'?'C:howmuch':'C:howleft'; if(!playSeq(['N:'+f.a,op,'N:'+f.b,end,'N:'+f.ans])){ try{ speak(narrateMath(f)+' '+nw(f.ans)); }catch(e){} } }
+function playMathFull(f){ if(!f) return; const op=f.op==='add'?'C:plus':'C:minus'; const end='C:howmuch'; if(!playSeq(['N:'+f.a,op,'N:'+f.b,end,'N:'+f.ans])){ try{ speak(narrateMath(f)+' '+nw(f.ans)); }catch(e){} } }
 // IndexedDB
 function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open('hebRec',1); r.onupgradeneeded=()=>r.result.createObjectStore('clips'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 async function idbPut(k,b){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction('clips','readwrite'); tx.objectStore('clips').put(b,k); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
@@ -1467,7 +1473,7 @@ function mathPrompt(f,form){
 function numOptions(ans,n){ const set=new Set([ans]); const cand=shuffle([ans-1,ans+1,ans-2,ans+2,ans+3,ans-3]).filter(x=>x>=0); let i=0; while(set.size<n&&i<cand.length){ set.add(cand[i++]); } let k=ans+4; while(set.size<n){ if(k>=0) set.add(k); k++; } return shuffle([...set]); }
 const NW=["אפס","אחת","שתיים","שלוש","ארבע","חמש","שש","שבע","שמונה","תשע","עשר","אחת עשרה","שתים עשרה","שלוש עשרה","ארבע עשרה","חמש עשרה","שש עשרה","שבע עשרה","שמונה עשרה","תשע עשרה","עשרים"];
 function nw(n){ return NW[n]!==undefined?NW[n]:String(n); }
-function narrateMath(f){ return f.op==='add' ? (nw(f.a)+" ועוד "+nw(f.b)+", שווה?") : (nw(f.a)+" פחות "+nw(f.b)+", כמה נשאר?"); }
+function narrateMath(f){ return (f.op==='add' ? (nw(f.a)+" ועוד "+nw(f.b)) : (nw(f.a)+" פחות "+nw(f.b)))+", שווה?"; }
 let smMathBank={}, smMathLast=null;
 function smMath(){
   const p=prof(); smMathBank=mathBank(); const ids=Object.keys(smMathBank);
