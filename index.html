@@ -363,7 +363,7 @@ function nLetterOpts(){ return lvl()===1?3:(lvl()===2?4:6); }
 function nFirstOpts(){ return lvl()===1?3:(lvl()===2?3:4); }
 function scrRange(){ const L=lvl(); return L===1?[2,3]:(L===2?[3,5]:[4,8]); }
 function numMax(){ return lvl()===1?5:10; }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} if(typeof cloudPush==='function') cloudPush(); }
+function save(){ data._ts=Date.now(); try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} if(typeof cloudPush==='function') cloudPush(); }
 function prof(){ return data.profiles[data.current]; }
 // ===== סנכרון ענן (Supabase REST, בלי ספרייה) =====
 const SUPA_URL='https://nsldehyyfppvvcamnbbb.supabase.co';
@@ -374,7 +374,7 @@ function genFamCode(){ const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c=''; for
 async function supaRpc(fn,body){ const r=await fetch(SUPA_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!r.ok) throw new Error('rpc '+r.status); const txt=await r.text(); return txt?JSON.parse(txt):null; }
 let _cloudT=null;
 function cloudPush(){ const c=famCode(); if(!c) return; clearTimeout(_cloudT); _cloudT=setTimeout(function(){ supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); },1500); }
-async function cloudPull(){ const c=famCode(); if(!c) return false; try{ const d=await supaRpc('load_progress',{p_code:c}); if(d&&d.profiles){ data=d; try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch(e){} return true; } }catch(e){} return false; }
+async function cloudPull(force){ const c=famCode(); if(!c) return false; try{ const d=await supaRpc('load_progress',{p_code:c}); if(d&&d.profiles&&Object.keys(d.profiles).length>0&&(force||(d._ts||0)>(data._ts||0))){ data=d; try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch(e){} return true; } }catch(e){} return false; }
 function syncMsg(m,err){ const e=document.getElementById('syncMsg'); if(e){ e.textContent=m; e.style.color=err?'#d64545':'#43a047'; } }
 function syncScreen(){ backTo=parentArea; const c=famCode();
   app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="parentArea()">${t('b_menu')}</button><div class="who">☁️ ${H('סנכרון','Sync')}</div></div>
@@ -383,7 +383,7 @@ function syncScreen(){ backTo=parentArea; const c=famCode();
     <div id="syncMsg" style="margin-top:14px;font-weight:bold;min-height:20px"></div></div></div>`;
 }
 function syncCreate(){ const c=genFamCode(); setFamCode(c); syncMsg(H('יוצר…','Creating…')); supaRpc('save_progress',{p_code:c,p_data:data}).then(function(){ syncScreen(); }).catch(function(){ syncMsg(H('שגיאת רשת — בדקו חיבור','Network error'),1); }); }
-function syncJoin(){ const el=document.getElementById('syncIn'); let c=(el?el.value:'').trim().toUpperCase(); if(c.length<4){ syncMsg(H('קוד קצר מדי','Code too short'),1); return; } setFamCode(c); syncMsg(H('מתחבר…','Linking…')); cloudPull().then(function(ok){ if(ok){ load(); syncMsg(H('חובר! ההתקדמות נטענה ✓','Linked! progress loaded ✓')); setTimeout(syncScreen,1000); } else { supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); syncMsg(H('המכשיר קושר לקוד','Device linked')); setTimeout(syncScreen,1000); } }); }
+function syncJoin(){ const el=document.getElementById('syncIn'); let c=(el?el.value:'').trim().toUpperCase(); if(c.length<4){ syncMsg(H('קוד קצר מדי','Code too short'),1); return; } setFamCode(c); syncMsg(H('מתחבר…','Linking…')); cloudPull(true).then(function(ok){ if(ok){ load(); syncMsg(H('חובר! ההתקדמות נטענה ✓','Linked! progress loaded ✓')); setTimeout(syncScreen,1000); } else { supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); syncMsg(H('המכשיר קושר לקוד','Device linked')); setTimeout(syncScreen,1000); } }); }
 function syncNow(){ syncMsg(H('מסנכרן…','Syncing…')); supaRpc('save_progress',{p_code:famCode(),p_data:data}).then(function(){ return cloudPull(); }).then(function(){ load(); syncMsg(H('סונכרן ✓','Synced ✓')); }).catch(function(){ syncMsg(H('שגיאת רשת','Network error'),1); }); }
 function syncUnlink(){ setFamCode(''); syncScreen(); }
 // ===== מסך פתיחה — זיהוי משפחה במכשיר חדש =====
@@ -396,7 +396,7 @@ function welcomeScreen(){ backTo=null;
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><input id="wcIn" placeholder="${H('קוד','Code')}" style="font-size:22px;padding:9px 12px;border-radius:12px;border:2px solid #cdb4ff;width:150px;text-align:center;text-transform:uppercase;direction:ltr;font-family:inherit"><button class="replay" style="margin:0;background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff;padding:10px 18px" onclick="welcomeJoin()">${H('חבר','Link')}</button></div>
     <div id="wcMsg" style="margin-top:14px;font-weight:bold;min-height:20px"></div></div></div>`;
 }
-function welcomeNew(){ const c=genFamCode(); setFamCode(c); supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); welcomeShowCode(c); }
+function welcomeNew(){ const c=genFamCode(); setFamCode(c); welcomeShowCode(c); }
 function welcomeShowCode(c){ backTo=null;
   app.innerHTML=`<div class="screen"><div class="card" style="max-width:440px;margin:7vh auto">
     <div class="prompt" style="font-weight:bold">🎉 ${H('המשפחה נוצרה!','Family created!')}</div>
@@ -406,7 +406,7 @@ function welcomeShowCode(c){ backTo=null;
     <div class="speak-hint" style="margin-top:14px;font-size:13px">${H('תמיד אפשר לראות אותו שוב: 🔒 הורים → ☁️ סנכרון','See it again anytime: 🔒 Parents → ☁️ Sync')}</div>
   </div></div>`;
 }
-function welcomeJoin(){ const el=document.getElementById('wcIn'); let c=(el?el.value:'').trim().toUpperCase(); if(c.length<4){ welcomeMsg(H('קוד קצר מדי','Code too short'),1); return; } setFamCode(c); welcomeMsg(H('מתחבר…','Linking…')); cloudPull().then(function(ok){ if(ok){ load(); bootScreen(); } else { setFamCode(''); welcomeMsg(H('קוד לא נמצא — בדקו שוב, או "משפחה חדשה"','Code not found — check it, or use "New family"'),1); } }); }
+function welcomeJoin(){ const el=document.getElementById('wcIn'); let c=(el?el.value:'').trim().toUpperCase(); if(c.length<4){ welcomeMsg(H('קוד קצר מדי','Code too short'),1); return; } setFamCode(c); welcomeMsg(H('מתחבר…','Linking…')); cloudPull(true).then(function(ok){ if(ok){ load(); bootScreen(); } else { setFamCode(''); welcomeMsg(H('קוד לא נמצא — בדקו שוב, או "משפחה חדשה"','Code not found — check it, or use "New family"'),1); } }); }
 
 // ===== שפת ממשק (he/en) — משנה רק טקסט של שמות המשחקים וההוראות =====
 let lang = "he";
@@ -2854,7 +2854,7 @@ function placementIntro(){ app.innerHTML=`<div class="screen">${topbar()}<div cl
   <button class="replay" style="background:#30cfd0;box-shadow:0 5px 0 #1a9aa0;color:#fff" onclick="placementStart()">${H('מתחילים ▶','Start ▶')}</button><br>
   <button class="replay" style="margin-top:12px" onclick="placementSkip()">${H('דלג ונתחיל מההתחלה','Skip & start from the beginning')}</button>
 </div></div>`; }
-function placementSkip(){ const p=prof(); p.placementDone=true; save(); pathScreen(); }
+function placementSkip(){ const p=prof(); if(!p) return pickProfile(); p.placementDone=true; save(); pathScreen(); }
 function placementStart(){ PL={idx:0,res:{letter:[0,0],read:[0,0],matheasy:[0,0],mathhard:[0,0],think:[0,0]}}; placementStep(); }
 function placementStep(){ if(PL.idx>=PLACEMENT.length) return placementDone();
   const q=PLACEMENT[PL.idx]; const head=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="pathScreen()">${t('b_menu')}</button><div class="who">📋 ${PL.idx+1}/${PLACEMENT.length}</div></div>`;
