@@ -219,14 +219,14 @@
 <script>
 // ================= נתונים =================
 const HEB_LETTERS = [
-  {l:"א",name:"אָלֶף",say:"אָלֶף"},{l:"ב",name:"בֵּית",say:"בֶּט"},{l:"ג",name:"גִּימֶל",say:"גִימֶל"},
-  {l:"ד",name:"דָּלֶת",say:"דָלֶת"},{l:"ה",name:"הֵא",say:"הֵי"},{l:"ו",name:"וָו",say:"וָו"},
-  {l:"ז",name:"זַיִן",say:"זַיִן"},{l:"ח",name:"חֵית",say:"חֵת"},{l:"ט",name:"טֵית",say:"טֶט"},
-  {l:"י",name:"יוֹד",say:"יוּד"},{l:"כ",name:"כָּף",say:"כָּאף"},{l:"ל",name:"לָמֶד",say:"לַאמֶד"},
-  {l:"מ",name:"מֵם",say:"מֵם"},{l:"נ",name:"נוּן",say:"נוּן"},{l:"ס",name:"סָמֶךְ",say:"סָמֶך"},
-  {l:"ע",name:"עַיִן",say:"עַיִן"},{l:"פ",name:"פֵּא",say:"פֵּיי"},{l:"צ",name:"צָדִי",say:"צָדִי"},
-  {l:"ק",name:"קוּף",say:"קוּף"},{l:"ר",name:"רֵישׁ",say:"רֵש"},{l:"ש",name:"שִׁין",say:"שִין"},
-  {l:"ת",name:"תָּו",say:"תָו"}
+  {l:"א",name:"אָלֶף",say:"אָלֶף",snd:"",silent:true},{l:"ב",name:"בֵּית",say:"בֶּט",snd:"בְּ"},{l:"ג",name:"גִּימֶל",say:"גִימֶל",snd:"גְּ"},
+  {l:"ד",name:"דָּלֶת",say:"דָלֶת",snd:"דְּ"},{l:"ה",name:"הֵא",say:"הֵי",snd:"הְ"},{l:"ו",name:"וָו",say:"וָו",snd:"וְ"},
+  {l:"ז",name:"זַיִן",say:"זַיִן",snd:"זְ"},{l:"ח",name:"חֵית",say:"חֵת",snd:"חְ"},{l:"ט",name:"טֵית",say:"טֶט",snd:"טְ"},
+  {l:"י",name:"יוֹד",say:"יוּד",snd:"יְ"},{l:"כ",name:"כָּף",say:"כָּאף",snd:"כְּ"},{l:"ל",name:"לָמֶד",say:"לַאמֶד",snd:"לְ"},
+  {l:"מ",name:"מֵם",say:"מֵם",snd:"מְ"},{l:"נ",name:"נוּן",say:"נוּן",snd:"נְ"},{l:"ס",name:"סָמֶךְ",say:"סָמֶך",snd:"סְ"},
+  {l:"ע",name:"עַיִן",say:"עַיִן",snd:"",silent:true},{l:"פ",name:"פֵּא",say:"פֵּיי",snd:"פְּ"},{l:"צ",name:"צָדִי",say:"צָדִי",snd:"צְ"},
+  {l:"ק",name:"קוּף",say:"קוּף",snd:"קְ"},{l:"ר",name:"רֵישׁ",say:"רֵש",snd:"רְ"},{l:"ש",name:"שִׁין",say:"שִין",snd:"שְׁ"},
+  {l:"ת",name:"תָּו",say:"תָו",snd:"תְּ"}
 ];
 const FL_COLORS = ["#ff5fa2","#6a5acd","#1abc9c","#f39c12","#3498db","#e74c3c","#9b59b6","#16a085"];
 
@@ -344,13 +344,15 @@ function imgFallback(el,key){ try{ el.insertAdjacentHTML('afterend', artSVG(key)
 
 // ================= שמירת נתונים =================
 const KEY = "betSeferIvrit_v1";
+const PATH_VERSION=2;
 let data = null;
 function defaultData(){
   return { current:null, voiceURI:null, lang:"he", profiles:{} };
 }
 function load(){ try{ data = JSON.parse(localStorage.getItem(KEY)); }catch(e){ data=null; } if(!data||!data.profiles) data = defaultData(); lang = data.lang || "he";
   Object.keys(data.profiles).forEach(id=>{ const p=data.profiles[id]; if(!p.level) p.level=2; if(!p.stats) p.stats={};
-    if(!p.path) p.path={progress:{}}; if(p.xp==null) p.xp=0; if(!p.streak) p.streak={count:0,last:null}; if(p.placementDone==null) p.placementDone=false; if(p.coins==null) p.coins=0; if(p.playEnd==null) p.playEnd=0;
+    if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={}; if(p.xp==null) p.xp=0; if(!p.streak) p.streak={count:0,last:null}; if(p.placementDone==null) p.placementDone=false; if(p.coins==null) p.coins=0; if(p.playEnd==null) p.playEnd=0;
+    if(p.pathVersion!==PATH_VERSION){ p.path={progress:{},fails:{}}; p.unitsDone={}; p.placementDone=true; p.pathVersion=PATH_VERSION; }
     if(!p.avatar) p.avatar={char:'kid',hat:'none',pet:'none',bg:'sky'}; if(p.avatar&&p.avatar.glasses==null) p.avatar.glasses='none'; if(p.avatar&&p.avatar.neck==null) p.avatar.neck='none'; if(!p.owned) p.owned={}; if(!p.worlds) p.worlds={}; if(!p.daily) p.daily={date:'',count:0,celebrated:false}; if(!p.unitsDone) p.unitsDone={}; }); }
 const COIN_MIN=5;
 let backTo=null, jumpFromId=null;
@@ -1422,7 +1424,7 @@ function masteredCount(p,ids){ let n=0; ids.forEach(id=>{ if(isMastered(p,id)) n
 function progressBar(n,tot){ const pc=tot?Math.round(100*n/tot):0; return `<div class="bar" style="margin:8px auto 4px;max-width:320px"><div style="width:${pc}%">${n}/${tot}</div></div>`; }
 // ===== תרגול ממוקד: מזהה את הפריטים החלשים ביותר ומגיש מפגש מעורב =====
 let focusIdInfoCache=null;
-function focusIdInfo(){ if(focusIdInfoCache) return focusIdInfoCache; const m={}; NODES.forEach(n=>{ if(n.type==='scramble') return; nodeResolveIds(n).forEach(id=>{ if(!m[id]) m[id]={type:n.type}; }); }); focusIdInfoCache=m; return m; }
+function focusIdInfo(){ if(focusIdInfoCache) return focusIdInfoCache; const m={}; NODES.forEach(n=>{ if(n.type==='scramble'||n.type==='phon'||n.type==='sofitword') return; nodeResolveIds(n).forEach(id=>{ if(!m[id]) m[id]={type:n.type}; }); }); focusIdInfoCache=m; return m; }
 function focusWeakPool(){ const p=prof(); const info=focusIdInfo(); const now=Date.now(); const ids=Object.keys(p.mastery||{}).filter(id=>info[id]);
   let weak=ids.filter(id=>{ const r=p.mastery[id]; return r.box<=2 || (r.due&&r.due<=now); });
   if(!weak.length) weak=ids;
@@ -1792,146 +1794,106 @@ function dotClick(num){
 }
 
 // ================= מסלול למידה (Duolingo/Candy-Crush style) =================
+// ================= מסלול למידה — עורק קריאה (קריאה-תחילה, מועצה 2026-06) =================
+// סדר אותיות לפי שכיחות/צורה; אות=צליל; ניקוד מדורג; הרכבה ומילה מוקדם; זוגות מבלבלים בעימות.
 const PATH_UNITS=[
-  {u:"אותיות ראשונות",en:"First Letters",icon:"🔤",col:"c1",nodes:[
-    {id:"u1n1",title:"א ב ג",type:"letters",items:["א","ב","ג"]},
-    {id:"u1n2",title:"ד ה ו",type:"letters",items:["ד","ה","ו"]},
-    {id:"u1n3",title:"חזרה א–ו",type:"letters",items:["א","ב","ג","ד","ה","ו"]},
-    {id:"u1n4",title:"ז ח ט",type:"letters",items:["ז","ח","ט"]},
-    {id:"u1n5",title:"חזרה א–ט",type:"letters",items:["א","ב","ג","ד","ה","ו","ז","ח","ט"]}
+  {u:"חימום אוזניים",en:"Ear Warm-up",icon:"👂",col:"c2",nodes:[
+    {id:"p0_first",title:"מה הצליל הראשון?",type:"phon",items:["sh_a","m_a","l_a"],optional:true}
   ]},
-  {u:"עוד אותיות",en:"More Letters",icon:"🔡",col:"c2",nodes:[
-    {id:"u2n1",title:"י כ ל",type:"letters",items:["י","כ","ל"]},
-    {id:"u2n2",title:"מ נ ס",type:"letters",items:["מ","נ","ס"]},
-    {id:"u2n3",title:"חזרה י–ס",type:"letters",items:["י","כ","ל","מ","נ","ס"]},
-    {id:"u2n4",title:"ע פ צ",type:"letters",items:["ע","פ","צ"]},
-    {id:"u2n5",title:"ק ר ש ת",type:"letters",items:["ק","ר","ש","ת"]},
-    {id:"u2n6",title:"אותיות סופיות",type:"sofit",items:["כ","מ","נ","פ","צ"]}
+  {u:"הצלילים הראשונים: שׁ ל מ",en:"First Sounds: Sh L M",icon:"🔤",col:"c1",nodes:[
+    {id:"u1_sh",title:"שׁ אומרת שְׁ",type:"lettersnd",items:["ש"]},
+    {id:"u1_l",title:"ל אומרת לְ",type:"lettersnd",items:["ל"]},
+    {id:"u1_m",title:"מ אומרת מְ",type:"lettersnd",items:["מ"]},
+    {id:"u1_warm",title:"חימום אוזניים",type:"phon",items:["sh_i","m_i","l_i"],optional:true},
+    {id:"u1_mix",title:"מתאמנים — שׁ ל מ",type:"lettersnd",items:["ש","ל","מ"]}
   ]},
-  {u:"קוראים הברות",en:"Reading Syllables",icon:"📖",col:"c5",nodes:[
-    {id:"rd1",title:"ניקוד על בּ",type:"read",items:["nk_a","nk_e","nk_i","nk_o","nk_u"]},
-    {id:"rd2",title:"הברות שׁ",type:"read",items:["sh_a","sh_e","sh_i","sh_o","sh_u"]},
-    {id:"rd3",title:"הברות מ ל",type:"read",items:["m_a","m_e","m_i","l_a","l_e","l_i"]},
-    {id:"rd4",title:"מילים ראשונות לקריאה",type:"read",items:["rw_0","rw_3","rw_2","rw_1"]}
+  {u:"הניקוד הראשון: אַ אִי",en:"First Vowels: a i",icon:"🎵",col:"c7",nodes:[
+    {id:"u2_kamatz",title:"הסימן הזה אומר אַ",type:"read",items:["sh_a"]},
+    {id:"u2_chirik",title:"הסימן הזה אומר אִי",type:"read",items:["sh_i"]},
+    {id:"u2_disc",title:"אַ או אִי?",type:"read",items:["sh_a","sh_i"]},
+    {id:"u2_gen",title:"אותו סימן על אותיות אחרות",type:"read",items:["sh_a","m_a","l_a"]}
   ]},
-  {u:"מילים ראשונות",en:"First Words",icon:"🖼️",col:"c3",nodes:[
-    {id:"u3n1",title:"חיות 1",type:"words",items:["dog","cat","fish"]},
-    {id:"u3n2",title:"חיות 2",type:"words",items:["lion","monkey","elephant"]},
-    {id:"u3n3",title:"אוכל",type:"words",items:["apple","banana","cake"]},
-    {id:"u3n4",title:"טבע",type:"words",items:["sun","moon","star"]},
-    {id:"u3n5",title:"חזרה מילים",type:"words",items:["dog","cat","fish","lion","apple","banana","sun","moon","star"]}
+  {u:"מרכיבים הברה + המילה הראשונה!",en:"Blending + First Word!",icon:"🧩",col:"c5",nodes:[
+    {id:"u3_blend_sh",title:"שׁ + תנועה = הברה",type:"blend",items:["sh_a","sh_i"]},
+    {id:"u3_blend_ml",title:"מ ו-ל + תנועה",type:"blend",items:["m_a","m_i","l_a","l_i"]},
+    {id:"u3_first_word",title:"המילה הראשונה שלי!",type:"read",items:["cw_sham"]},
+    {id:"u3_read_syl",title:"קוראים הברה",type:"read",items:["sh_a","sh_i","m_a","m_i","l_a","l_i"]}
   ]},
-  {u:"קריאה וחשבון",en:"Reading & Math",icon:"📖",col:"c4",nodes:[
-    {id:"u4n1",title:"קריאה",type:"readpic",items:["dog","apple","sun","cat","star"]},
-    {id:"u4n2",title:"חיבור עד 5",type:"math",items:["add_1_1","add_1_2","add_2_2","add_1_3","add_2_3"]},
-    {id:"u4n3",title:"חיבור עד 10",type:"math",items:["add_2_4","add_3_4","add_4_4","add_3_5","add_4_5","add_5_5"]},
-    {id:"u4n4",title:"חיסור",type:"math",items:["sub_3_1","sub_4_2","sub_5_2","sub_5_3","sub_6_4"]}
+  {u:"ר א ת + עוד מילים",en:"R A T + More Words",icon:"🔤",col:"c4",nodes:[
+    {id:"u4_r",title:"ר אומרת רְ",type:"lettersnd",items:["ר"]},
+    {id:"u4_t",title:"ת אומרת תְּ",type:"lettersnd",items:["ת"]},
+    {id:"u4_a",title:"א השקטה — נותנת לתנועה לדבר",type:"lettersnd",items:["א"]},
+    {id:"u4_blend_rt",title:"מרכיבים ר ו-ת",type:"blend",items:["r_a","r_i","t_a","t_i"]},
+    {id:"u4_word",title:"קוראים מילים חדשות",type:"read",items:["cw_shar","cw_mar","cw_ram","cw_tam","cw_tamar","cw_amar"]},
+    {id:"u4_mix",title:"מתאמנים — 6 אותיות",type:"lettersnd",items:["ש","ל","מ","ר","א","ת"]}
   ]},
-  {u:"מושגים ודקדוק",en:"Concepts & Grammar",icon:"🧠",col:"c7",nodes:[
-    {id:"u5n1",title:"מילות מקום",type:"concept",items:["inout","onunder","updown"]},
-    {id:"u5n2",title:"זכר ונקבה 1",type:"gender",items:["dog","cat","sun","car","bee","banana"]},
-    {id:"u5n3",title:"זכר ונקבה 2",type:"gender",items:["lion","cow","cake","moon","bird","ball"]}
+  {u:"קוראים ומסדרים (CVC)",en:"Read & Build",icon:"📖",col:"c3",nodes:[
+    {id:"u5_build",title:"מסדרים אותיות למילה",type:"scramble",items:["cw_tam","cw_ram","cw_shar"]},
+    {id:"u5_read_test",title:"מבחן קריאה — מילים קצרות",type:"read",items:["cw_tamar","cw_shar","cw_mar","cw_ram","cw_amar","cw_sham"]},
+    {id:"u5_bonus",title:"בונוס: מה לא שייך?",type:"oddone",items:["odd0","odd1","odd2"],bonus:true}
   ]},
-  {u:"אתגרים",en:"Challenges",icon:"🏆",col:"c8",nodes:[
-    {id:"u6n1",title:"השלם משפט",type:"sentence",items:["se0","se1","se2","se3","se4"]},
-    {id:"u6n2",title:"עבר הווה עתיד",type:"tense",items:["te0","te1","te2","te3","te4","te5"]},
-    {id:"u6n3",title:"מילים מבולבלות 1",type:"scramble",items:["dog","sun","fish","cat","star"]},
-    {id:"u6n4",title:"מילים מבולבלות 2",type:"scramble",items:["apple","ball","cake","moon"]}
+  {u:"כל הניקוד + ב י ה",en:"All Vowels + B Y H",icon:"🔤",col:"c2",nodes:[
+    {id:"u6_vowels",title:"עוד צלילים: אֶ אוֹ אוּ",type:"read",items:["sh_e","sh_o","sh_u"]},
+    {id:"u6_b",title:"ב אומרת בְּ",type:"lettersnd",items:["ב"]},
+    {id:"u6_y",title:"י אומרת יְ",type:"lettersnd",items:["י"]},
+    {id:"u6_h",title:"ה אומרת הְ",type:"lettersnd",items:["ה"]},
+    {id:"u6_blend_b",title:"מרכיבים עם בּ — כל התנועות",type:"blend",items:["ba","be","bi","bo","bu"]}
   ]},
-  {u:"חשיבה ומספרים",en:"Thinking & Numbers",icon:"🧩",col:"c3",nodes:[
-    {id:"u7n1",title:"גדול או קטן",type:"compare",items:["cmp_2_5","cmp_7_3","cmp_4_8","cmp_6_1","cmp_9_4"]},
-    {id:"u7n2",title:"המספר החסר",type:"missing",items:["mis_3","mis_6","mis_4","mis_8","mis_5"]},
-    {id:"u7n3",title:"מה לא שייך",type:"oddone",items:["odd0","odd1","odd2","odd3","odd4"]},
-    {id:"u7n4",title:"הפכים",type:"opposite",items:["opp_גדול","opp_חם","opp_יום","opp_שמח","opp_גבוה","opp_פתוח"]}
+  {u:"קוראים מילים אמיתיות",en:"Reading Real Words",icon:"📚",col:"c8",nodes:[
+    {id:"u7_fam",title:"אבא · אמא · מים",type:"read",items:["aba","ima","mayim"]},
+    {id:"u7_more",title:"עוד מילים לקריאה",type:"read",items:["cw_tamar","cw_amar","cw_shamar"]},
+    {id:"u7_lion",title:"קוראים ובוחרים תמונה",type:"readpic",items:["lion"]}
   ]},
-  {u:"מילים מתקדמות",en:"Advanced Words",icon:"📚",col:"c2",nodes:[
-    {id:"u8n1",title:"קריאת מילים ארוכות",type:"readpic",items:["elephant","butterfly","dinosaur","umbrella","helicopter"]},
-    {id:"u8n2",title:"חיות מיוחדות",type:"words",items:["zebra","hippo","crocodile","octopus","kangaroo"]},
-    {id:"u8n3",title:"מילים מבולבלות קשות",type:"scramble",items:["frog","car","duck","chicken","train"]},
-    {id:"u8n4",title:"הפכים מתקדמים",type:"opposite",items:["opp_מלא","opp_ארוך","opp_כבד","opp_נקי","opp_חדש","opp_רחוק"]}
+  {u:"ד ק נ ס — זהירות, ד מול ר!",en:"D K N S: D vs R",icon:"⚠️",col:"c6",nodes:[
+    {id:"u8_d",title:"ד אומרת דְּ",type:"lettersnd",items:["ד"]},
+    {id:"u8_dr",title:"ד או ר? לא להתבלבל",type:"letterpair",items:["ד","ר"]},
+    {id:"u8_kns",title:"ק נ ס — הצלילים",type:"lettersnd",items:["ק","נ","ס"]},
+    {id:"u8_blend_ns",title:"מרכיבים נ ס ד",type:"blend",items:["read_n_a","read_n_i","read_s_a","read_s_i","read_d_a","read_d_i"]},
+    {id:"u8_word",title:"קוראים: סוּס · סָבָא",type:"read",items:["sus","saba"]}
   ]},
-  {u:"חשבון מתקדם",en:"Advanced Math",icon:"➗",col:"c4",nodes:[
-    {id:"u9n1",title:"חיבור עד 20",type:"math",items:["add_7_8","add_6_9","add_8_9","add_9_9","add_7_7"]},
-    {id:"u9n2",title:"חיסור גדול",type:"math",items:["sub_15_7","sub_18_9","sub_14_6","sub_17_8","sub_16_9"]},
-    {id:"u9n3",title:"השוואת מספרים גדולים",type:"compare",items:["cmp_8_14","cmp_19_11","cmp_13_17","cmp_12_7","cmp_15_9"]},
-    {id:"u9n4",title:"המספר החסר",type:"missing",items:["mis_12","mis_16","mis_14","mis_18","mis_11"]}
+  {u:"ו פ כ — ב מול כ",en:"V P K: B vs K",icon:"🔤",col:"c1",nodes:[
+    {id:"u9_v",title:"ו אומרת וְ",type:"lettersnd",items:["ו"]},
+    {id:"u9_p",title:"פ אומרת פְּ",type:"lettersnd",items:["פ"]},
+    {id:"u9_k",title:"כ אומרת כְּ",type:"lettersnd",items:["כ"]},
+    {id:"u9_bk",title:"ב או כ? לא להתבלבל",type:"letterpair",items:["ב","כ"]},
+    {id:"u9_word",title:"קוראים: יָד · פֶּה · אַף",type:"read",items:["rw_0","rw_1","rw_2"]},
+    {id:"u9_bonus",title:"בונוס: גדול או קטן?",type:"compare",items:["cmp_2_5","cmp_7_3","cmp_4_8"],bonus:true}
   ]},
-  {u:"קריאה ומילים מבולבלות",en:"Reading & Scramble",icon:"📖",col:"c5",nodes:[
-    {id:"rdn1",title:"קוראים ובוחרים",type:"readpic",items:["dog","cat","sun","ball","car"]},
-    {id:"rdn2",title:"מילים מבולבלות",type:"scramble",items:["dog","cat","fish","sun"]},
-    {id:"rdn3",title:"קריאה — עוד מילים",type:"readpic",items:["apple","banana","moon","fish","book"]},
-    {id:"rdn4",title:"מבולבלות — עוד",type:"scramble",items:["ball","milk","star","cake"]},
-    {id:"rdn5",title:"קריאה — חזרה",type:"readpic",items:["star","cake","milk","flower","car"]}
+  {u:"ע ח ג ז ט צ — האחרונות",en:"Last Letters",icon:"🔤",col:"c7",nodes:[
+    {id:"u10_ach",title:"ח אומרת חְ, ע שקטה",type:"lettersnd",items:["ח","ע"]},
+    {id:"u10_hct",title:"ה או ח או ת? מבחן עיניים",type:"letterpair",items:["ה","ח","ת"]},
+    {id:"u10_gzts",title:"ג ז ט צ — הצלילים",type:"lettersnd",items:["ג","ז","ט","צ"]},
+    {id:"u10_vz",title:"ו או ז? לא להתבלבל",type:"letterpair",items:["ו","ז"]},
+    {id:"u10_all",title:"מתאמנים — כל האותיות",type:"lettersnd",items:["א","ב","ג","ד","ה","ו","ז","ח","ט","י","כ","ל","מ","נ","ס","ע","פ","צ","ק","ר","ש","ת"]}
   ]},
-  {u:"חיות העולם",en:"World Animals",icon:"🦁",col:"c1",nodes:[
-    {id:"x1n1",title:"חיות בית",type:"words",items:["dog","cat","rabbit","hamster"]},
-    {id:"x1n2",title:"חיות חווה",type:"words",items:["cow","horse","sheep","goat","duck","chicken"]},
-    {id:"x1n3",title:"חיות ים",type:"words",items:["fish","dolphin","whale","crab","octopus","shark"]},
-    {id:"x1n4",title:"חיות יער",type:"words",items:["fox","wolf","bear","deer","owl","hedgehog"]},
-    {id:"x1n5",title:"חזרה חיות",type:"words",items:["dog","cow","fish","fox","owl","frog","bird","snake"]}
+  {u:"אותיות סופיות בתוך מילה",en:"Final Letters in Words",icon:"🔚",col:"c5",nodes:[
+    {id:"u11_m",title:"מ שנהיית ם בסוף",type:"sofitword",items:["מַיִם:ם"]},
+    {id:"u11_f",title:"ף בסוף מילה",type:"sofitword",items:["קוֹף:ף"]},
+    {id:"u11_n",title:"ן בסוף מילה",type:"sofitword",items:["גָּן:ן"]},
+    {id:"u11_ts",title:"ץ בסוף מילה",type:"sofitword",items:["עֵץ:ץ"]}
   ]},
-  {u:"אוכל וטעמים",en:"Food & Tastes",icon:"🍎",col:"c3",nodes:[
-    {id:"x2n1",title:"פירות",type:"words",items:["apple","banana","grapes","orange","pear","cherry"]},
-    {id:"x2n2",title:"ירקות",type:"words",items:["carrot","tomato","corn","cucumber","pepper","broccoli"]},
-    {id:"x2n3",title:"ממתקים",type:"words",items:["cake","cookie","donut","candy","chocolate","icecream"]},
-    {id:"x2n4",title:"ארוחה",type:"words",items:["bread","cheese","egg","soup","pizza","milk"]},
-    {id:"x2n5",title:"קריאת אוכל",type:"readpic",items:["apple","banana","pizza","cake","milk","egg"]}
-  ]},
-  {u:"בעולם הגדול",en:"Out in the World",icon:"🌍",col:"c4",nodes:[
-    {id:"x3n1",title:"כלי רכב",type:"words",items:["car","bus","train","truck","boat","airplane"]},
-    {id:"x3n2",title:"בבית",type:"words",items:["chair","bed","door","window","lamp","cup"]},
-    {id:"x3n3",title:"טבע ומזג אוויר",type:"words",items:["sun","cloud","rain","snow","rainbow","tree"]},
-    {id:"x3n4",title:"קריאת מקומות",type:"readpic",items:["house","tree","car","boat","star","flower"]}
-  ]},
-  {u:"אותיות וקריאה",en:"Letters & Reading",icon:"🔤",col:"c2",nodes:[
-    {id:"x4n1",title:"מילים קצרות",type:"readpic",items:["dog","cat","sun","fish","star"]},
-    {id:"x4n2",title:"מילים בינוניות",type:"readpic",items:["apple","flower","monkey","banana","rabbit"]},
-    {id:"x4n3",title:"מילים ארוכות",type:"readpic",items:["butterfly","elephant","crocodile","helicopter","strawberry"]},
-    {id:"x4n4",title:"סופיות בשימוש",type:"sofit",items:["כ","מ","נ","פ","צ"]}
-  ]},
-  {u:"מבולבלות",en:"Scramble Fun",icon:"🧩",col:"c5",nodes:[
-    {id:"x5n1",title:"מבולבלות קלות",type:"scramble",items:["dog","cat","sun","star"]},
-    {id:"x5n2",title:"מבולבלות בינוניות",type:"scramble",items:["fish","milk","ball","cake","moon"]},
-    {id:"x5n3",title:"מבולבלות חיות",type:"scramble",items:["frog","duck","bird","bear"]},
-    {id:"x5n4",title:"מבולבלות אוכל",type:"scramble",items:["apple","bread","honey","lemon"]}
-  ]},
-  {u:"חיבור צעד אחר צעד",en:"Adding Step by Step",icon:"➕",col:"c8",nodes:[
-    {id:"x6n1",title:"חיבור עד 4",type:"math",items:["add_0_2","add_1_1","add_1_2","add_2_2","add_1_3"]},
-    {id:"x6n2",title:"חיבור עד 6",type:"math",items:["add_2_4","add_3_3","add_1_5","add_0_5","add_3_2"]},
-    {id:"x6n3",title:"חיבור עד 8",type:"math",items:["add_3_5","add_4_4","add_2_5","add_4_3","add_3_4"]},
-    {id:"x6n4",title:"חיבור עד 10",type:"math",items:["add_5_5","add_4_5","add_1_5","add_5_4","add_2_5"]}
-  ]},
-  {u:"חיסור צעד אחר צעד",en:"Subtracting Step by Step",icon:"➖",col:"c6",nodes:[
-    {id:"x7n1",title:"חיסור קל",type:"math",items:["sub_3_1","sub_4_1","sub_2_1","sub_5_1","sub_4_2"]},
-    {id:"x7n2",title:"חיסור בינוני",type:"math",items:["sub_6_2","sub_7_3","sub_8_4","sub_6_3","sub_5_2"]},
-    {id:"x7n3",title:"חיסור עד 9",type:"math",items:["sub_9_4","sub_8_5","sub_9_3","sub_7_4","sub_8_2"]},
-    {id:"x7n4",title:"מעורב חיבור־חיסור",type:"math",items:["add_4_5","sub_8_3","add_3_6","sub_9_5","add_5_4"]}
-  ]},
-  {u:"מספרים גדולים",en:"Bigger Numbers",icon:"🔢",col:"c4",nodes:[
-    {id:"x8n1",title:"חיבור עד 14",type:"math",items:["add_6_7","add_5_8","add_6_6","add_7_6","add_5_9"]},
-    {id:"x8n2",title:"חיבור עד 18",type:"math",items:["add_7_8","add_8_9","add_9_9","add_7_9","add_8_8"]},
-    {id:"x8n3",title:"חיסור גדול",type:"math",items:["sub_14_6","sub_16_7","sub_18_9","sub_15_8","sub_17_9"]},
-    {id:"x8n4",title:"המספר החסר",type:"missing",items:["mis_13","mis_15","mis_17","mis_12","mis_19"]}
-  ]},
-  {u:"חשיבה והשוואה",en:"Thinking & Comparing",icon:"🧠",col:"c7",nodes:[
-    {id:"x9n1",title:"גדול או קטן — קטן",type:"compare",items:["cmp_1_4","cmp_5_2","cmp_3_6","cmp_2_7","cmp_8_1"]},
-    {id:"x9n2",title:"גדול או קטן — גדול",type:"compare",items:["cmp_11_6","cmp_14_9","cmp_8_15","cmp_13_5","cmp_10_18"]},
-    {id:"x9n3",title:"מה לא שייך 1",type:"oddone",items:["odd0","odd2","odd4","odd6","odd8"]},
-    {id:"x9n4",title:"מה לא שייך 2",type:"oddone",items:["odd1","odd3","odd5","odd7","odd9"]}
-  ]},
-  {u:"הפכים ודקדוק",en:"Opposites & Grammar",icon:"🔁",col:"c5",nodes:[
-    {id:"x10n1",title:"הפכים בסיסיים",type:"opposite",items:["opp_גדול","opp_חם","opp_יום","opp_שמח","opp_פתוח"]},
-    {id:"x10n2",title:"הפכים מתקדמים",type:"opposite",items:["opp_מלא","opp_כבד","opp_נקי","opp_חדש","opp_רחוק","opp_רטוב"]},
-    {id:"x10n3",title:"זכר ונקבה 1",type:"gender",items:["dog","lion","star","ball","tree","hat"]},
-    {id:"x10n4",title:"זכר ונקבה 2",type:"gender",items:["bee","cow","car","boat","shoe","banana"]}
-  ]},
-  {u:"משפטים וזמנים",en:"Sentences & Tenses",icon:"📝",col:"c2",nodes:[
-    {id:"x11n1",title:"השלם משפט 1",type:"sentence",items:["se0","se1","se2","se3","se4"]},
-    {id:"x11n2",title:"השלם משפט 2",type:"sentence",items:["se5","se6","se7","se8","se9"]},
-    {id:"x11n3",title:"עבר הווה עתיד 1",type:"tense",items:["te0","te1","te2","te3","te4","te5"]},
-    {id:"x11n4",title:"עבר הווה עתיד 2",type:"tense",items:["te6","te7","te8","te9","te10","te11"]}
+  {u:"קוראים הרבה — גשר לשטף",en:"Fluency Bridge",icon:"🏆",col:"c4",nodes:[
+    {id:"u12_readpic",title:"קוראים מילים — תמונות",type:"readpic",items:["dog","cat","fish","sun","ball"]},
+    {id:"u12_scramble",title:"מסדרים מילים",type:"scramble",items:["dog","cat","sun"]},
+    {id:"u12_sentence",title:"קוראים משפט",type:"sentence",items:["se0","se1","se2"]},
+    {id:"u12_words",title:"מילה לתמונה (אוצר מילים)",type:"words",items:["dog","cat","fish","lion"],bonus:true},
+    {id:"u12_test",title:"מבחן קריאה גדול",type:"read",items:["aba","ima","mayim","sus","saba","rw_0","rw_2"]}
   ]}
 ];
+// --- צמתי ליבת-קריאה: שער מעבר גבוה (80%) עם רשת-נפילה; השאר (בונוס/חימום) 60% ---
+function isCoreReading(n){ return !!(n && !n.bonus && !n.optional && ['lettersnd','letterpair','blend','read','sofitword'].indexOf(n.type)>=0); }
+// --- canDecode: אכיפת "אין מילה לפני אותיותיה". כלי-עזר + audit (window.auditPath) ---
+const WORLD_LETTERS=[ [], ["ש","ל","מ"], [], [], ["ר","א","ת"], [], ["ב","י","ה"], [], ["ד","ק","נ","ס"], ["ו","פ","כ"], ["ע","ח","ג","ז","ט","צ"], [], [] ];
+const WORLD_VOWELS=[ [], [], ["a","i"], [], [], [], ["e","o","u"], [], [], [], [], [], [] ];
+const SOFIT_BASE={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
+const NIK_VOWEL={"ָ":"a","ַ":"a","ִ":"i","ֵ":"e","ֶ":"e","ֹ":"o","ֻ":"u","ּ":null,"ְ":null,"ֱ":"e","ֲ":"a","ֳ":"o","ׁ":null,"ׂ":null};
+function cumAllow(uIdx){ const L=new Set(), V=new Set(); for(let i=0;i<=uIdx;i++){ (WORLD_LETTERS[i]||[]).forEach(x=>L.add(x)); (WORLD_VOWELS[i]||[]).forEach(x=>V.add(x)); } return {L:L,V:V}; }
+function canDecode(he, allow){ const bad={letters:[],vowels:[]}; const s=String(he||'');
+  for(const ch of s){ if(ch==='ּ'||ch==='ׁ'||ch==='ׂ') continue;
+    if(ch>='א'&&ch<='ת'){ const base=SOFIT_BASE[ch]||ch; if(!allow.L.has(base)) bad.letters.push(ch); }
+    else if(ch>='ְ'&&ch<='ֻ'||ch==='ׁ'||ch==='ׂ'){ const v=NIK_VOWEL[ch]; if(v && !allow.V.has(v)) bad.vowels.push(v); }
+  }
+  return { ok: bad.letters.length===0 && bad.vowels.length===0, bad:bad }; }
 const NODES=[], NODE_BY_ID={};
 PATH_UNITS.forEach(u=>u.nodes.forEach(n=>{ n._unit=u; NODES.push(n); NODE_BY_ID[n.id]=n; }));
 function nodeOrder(id){ return NODES.findIndex(n=>n.id===id); }
@@ -1948,7 +1910,7 @@ function bumpStreak(){ const p=prof(); const ts=todayStr(); const s=p.streak||(p
 // ----- נגן שלב (node) -----
 let NODE={id:null,type:null,ids:[],last:null,taught:{},correct:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0};
 function nodeBar(){ const n=NODE_BY_ID[NODE.id]; return `<div class="topbar"><button class="back-btn" onclick="pathScreen()">${t('b_menu')}</button><div class="who">${n._unit.icon} ${lang==='en'?n._unit.en:n.title}</div></div>`; }
-function nodeCat(){ return ({math:'math',words:'words',readpic:'words',sofit:'sofit',letters:'letters',concept:'concepts',gender:'gender',sentence:'sentence',tense:'tense',scramble:'scramble',compare:'math',missing:'math',oddone:'concepts',opposite:'words',read:'reading'})[NODE.type]||'letters'; }
+function nodeCat(){ return ({math:'math',words:'words',readpic:'words',sofit:'sofit',letters:'letters',concept:'concepts',gender:'gender',sentence:'sentence',tense:'tense',scramble:'scramble',compare:'math',missing:'math',oddone:'concepts',opposite:'words',read:'reading',lettersnd:'letters',letterpair:'letters',blend:'reading',phon:'reading',sofitword:'sofit'})[NODE.type]||'letters'; }
 function startNode(id){ const n=NODE_BY_ID[id]; if(!n) return; clearAdv(); NODE={id:id,type:n.type,ids:nodeResolveIds(n),last:null,taught:{},covered:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0}; nodeLearn(); }
 function nodeLearn(){
   const p=prof();
@@ -1969,6 +1931,18 @@ function nodeTeach(id,cont){
     html=`<div style="font-size:clamp(56px,18vw,120px);font-weight:bold;color:#6a5acd">${s.base} → <span style="color:#43cea2">${s.fin}</span></div><div class="prompt" style="color:#ff5fa2">${H('האות הסופית','final form')}</div>`; after=()=>speakLetter(s.say);
   } else if(T==='read'){ const it=READ_BY[id]||{he:id,say:id};
     html=`<div style="font-size:clamp(64px,20vw,140px);font-weight:bold;color:#5b8def;direction:rtl;line-height:1.1">${it.he}</div>`; after=()=>sayReadKey(it.say);
+  } else if(T==='lettersnd'){ const d=HEB_LETTERS.find(x=>x.l===id)||HEB_LETTERS[0]; const w=lettersWithWord(id)[0]; const sndTxt=d.silent?H('שקטה — נותנת לתנועה לדבר','silent — lets the vowel speak'):(d.snd||'');
+    html=`<div class="big-letter" onclick="playLetter('${escq(d.l)}','${escq(d.say)}')">${id}</div><div class="prompt" style="color:#ff5fa2;font-weight:bold">${H('אומרת','says')} ${sndTxt}</div>${w?`<div class="pic-art" onclick="playWord('${escq(w.say)}')">${art(w.art)}</div><div class="word-display">${w.w}</div>`:''}`;
+    after=()=>{ playLetter(d.l,d.say); };
+  } else if(T==='letterpair'){ const letters=NODE.ids;
+    html=`<div class="prompt" style="font-weight:bold;color:#ff5fa2">${H('שימו לב — אל תתבלבלו!','Careful — easy to mix up!')}</div><div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:6px">${letters.map(l=>{ const dd=HEB_LETTERS.find(x=>x.l===l)||{say:l}; return `<div onclick="playLetter('${escq(l)}','${escq(dd.say)}')" style="font-size:clamp(50px,16vw,104px);font-weight:bold;color:#6a5acd;cursor:pointer">${l}</div>`; }).join('')}</div>`;
+    after=()=>{ let i=0; (function seq(){ if(i<letters.length){ const dd=HEB_LETTERS.find(x=>x.l===letters[i]); if(dd) playLetter(dd.l,dd.say); i++; setTimeout(seq,950); } })(); };
+  } else if(T==='blend'){ const it=READ_BY[id]||{he:id,say:id}; const heS=String(it.he); const cons=heS.charAt(0); const vow=heS.slice(1);
+    html=`<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap"><span style="font-size:clamp(40px,12vw,84px);font-weight:bold;color:#5b8def">${cons}</span><span style="font-size:clamp(26px,7vw,44px)">+</span><span style="font-size:clamp(40px,12vw,84px);font-weight:bold;color:#e67e22">${vow||'ָ'}</span><span style="font-size:clamp(26px,7vw,44px)">=</span><span style="font-size:clamp(52px,16vw,112px);font-weight:bold;color:#43cea2">${heS}</span></div><div class="prompt">${H('מחברים ביחד','blend them together')}</div>`;
+    after=()=>sayReadKey(it.say);
+  } else if(T==='sofitword'){ const word=String(id).split(':')[0];
+    html=`<div class="word-display" style="direction:rtl;font-size:clamp(40px,12vw,80px);cursor:pointer" onclick="sayReadKey('${escq(word)}')">${word}</div><div class="prompt" style="color:#ff5fa2;font-weight:bold">${H('שימו לב לאות האחרונה','look at the last letter')}</div>`;
+    after=()=>sayReadKey(word);
   } else { const d=HEB_LETTERS.find(x=>x.l===id); const w=lettersWithWord(id)[0];
     html=`<div class="big-letter" onclick="speakLetter('${escq(d.say)}')">${id}</div><div class="prompt" style="color:#ff5fa2;font-weight:bold">${d.name}</div>${w?`<div class="pic-art" onclick="playWord('${escq(w.say)}')">${art(w.art)}</div><div class="word-display">${w.w}</div>`:''}`;
     after=()=>{ speakLetter(d.say); if(w) setTimeout(()=>playWord(w.say),1200); };
@@ -1976,11 +1950,27 @@ function nodeTeach(id,cont){
   app.innerHTML=`<div class="screen">${nodeBar()}<div class="card"><div class="speak-hint">${t('l_learn_intro')}</div>${html}<button class="replay" style="background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff;margin-top:14px" onclick="nodeCont()">${t('l_gotit')}</button></div></div>`;
   if(after) setTimeout(after,350);
 }
+function readDistract(id){ const it=READ_BY[id]; if(!it) return []; if(String(id).indexOf('nk_')===0){ return ['nk_a','nk_e','nk_i','nk_o','nk_u'].map(k=>READ_BY[k]).filter(Boolean); } const hl=String(it.he||'').length; const out=[]; for(const k in READ_BY){ const o=READ_BY[k]; if(o&&o.id!==id&&o.he&&Math.abs(String(o.he).length-hl)<=1) out.push(o); } return shuffle(out); }
 function buildQ(id,h){ const _s=lang; lang='he'; try{ return _buildQ(id,h); } finally{ lang=_s; } }
 function _buildQ(id,h){
   const T=NODE.type;
-  if(T==='read'){ const it=READ_BY[id]||READ_BY[NODE.ids[0]]; const pool=NODE.ids.filter(x=>x!==id).map(x=>READ_BY[x]).filter(Boolean); let opts=shuffle(pool).slice(0,3); opts.push(it); opts=shuffle(opts); setTimeout(()=>sayReadKey(it.say),320);
-    return `<div class="prompt">${H('מה שמעתם? לחצו על הכתב הנכון','What did you hear? tap the right one')}</div><button class="replay" onclick="sayReadKey('${escq(it.say)}')">🔊 ${H('שמע שוב','Again')}</button><div class="options three" style="margin-top:14px">${opts.map(o=>`<button class="opt" style="font-size:clamp(30px,9vw,52px);min-height:92px;direction:rtl" onclick="${h}(this,${o.id===id},'${escq(id)}','read')">${o.he}</button>`).join("")}</div>`;
+  if(T==='read'||T==='blend'){ const it=READ_BY[id]||READ_BY[NODE.ids[0]]||{he:id,say:id}; let pool=NODE.ids.filter(x=>x!==id).map(x=>READ_BY[x]).filter(Boolean);
+    if(pool.length<3){ const seen={}; pool.forEach(o=>seen[o.id]=1); seen[id]=1; readDistract(id).forEach(o=>{ if(o&&!seen[o.id]){ pool.push(o); seen[o.id]=1; } }); }
+    let opts=shuffle(pool).slice(0,3); opts.push(it); opts=shuffle(opts); setTimeout(()=>sayReadKey(it.say),320);
+    return `<div class="prompt">${H('מה שמעתם? לחצו על הכתב הנכון','What did you hear? tap the right one')}</div><button class="replay" onclick="sayReadKey('${escq(it.say)}')">🔊 ${H('שמע שוב','Again')}</button><div class="options three" style="margin-top:14px">${opts.map(o=>`<button class="opt" style="font-size:clamp(28px,8vw,48px);min-height:92px;direction:rtl" onclick="${h}(this,${o.id===id},'${escq(id)}','read')">${o.he}</button>`).join("")}</div>`;
+  }
+  if(T==='lettersnd'){ const d=HEB_LETTERS.find(x=>x.l===id)||HEB_LETTERS[0]; const silent=!!d.silent; let opts=shuffle(HEB_LETTERS.filter(x=>x.l!==id)).slice(0,lvl()===1?2:3); opts.push(d); opts=shuffle(opts); setTimeout(()=>playLetter(d.l,d.say),300);
+    const q=silent?(H('מצא את האות','Find the letter')+' '+id):H('איזו אות אומרת את הצליל הזה?','Which letter makes this sound?');
+    return `<div class="prompt">${q}</div><button class="replay" onclick="playLetter('${escq(d.l)}','${escq(d.say)}')">🔊 ${t('b_again')}</button><div class="options" style="margin-top:16px">${opts.map(o=>`<button class="opt" style="font-size:clamp(30px,9vw,52px)" onclick="${h}(this,${o.l===id},'${escq(id)}','snd')">${o.l}</button>`).join("")}</div>`;
+  }
+  if(T==='letterpair'){ const d=HEB_LETTERS.find(x=>x.l===id)||HEB_LETTERS[0]; let opts=NODE.ids.map(x=>HEB_LETTERS.find(y=>y.l===x)).filter(Boolean); if(opts.length<2) opts=opts.concat(shuffle(HEB_LETTERS.filter(x=>x.l!==id)).slice(0,2)); opts=shuffle(opts); setTimeout(()=>playLetter(d.l,d.say),300);
+    return `<div class="prompt">${H('איזו אות שמעת?','Which letter did you hear?')}</div><button class="replay" onclick="playLetter('${escq(d.l)}','${escq(d.say)}')">🔊 ${t('b_again')}</button><div class="options" style="margin-top:16px">${opts.map(o=>`<button class="opt" style="font-size:clamp(34px,11vw,60px)" onclick="${h}(this,${o.l===id},'${escq(id)}','pair')">${o.l}</button>`).join("")}</div>`;
+  }
+  if(T==='phon'){ const it=READ_BY[id]||{he:id,say:id}; const ans=String(it.he||id).charAt(0); let letters=[ans]; NODE.ids.forEach(x=>{ const o=READ_BY[x]; if(o){ const c=String(o.he).charAt(0); if(letters.indexOf(c)<0) letters.push(c); } }); while(letters.length<3){ const r=rnd(HEB_LETTERS).l; if(letters.indexOf(r)<0) letters.push(r); } letters=shuffle(letters).slice(0,3); if(letters.indexOf(ans)<0){ letters[0]=ans; letters=shuffle(letters); } setTimeout(()=>sayReadKey(it.say),320);
+    return `<div class="prompt">${H('באיזו אות זה מתחיל?','Which letter does it start with?')}</div><button class="replay" onclick="sayReadKey('${escq(it.say)}')">🔊 ${H('שמע שוב','Again')}</button><div class="options three" style="margin-top:14px">${letters.map(o=>`<button class="opt" style="font-size:clamp(30px,9vw,52px)" onclick="${h}(this,${o===ans},'${escq(id)}','phon')">${o}</button>`).join("")}</div>`;
+  }
+  if(T==='sofitword'){ const word=String(id).split(':')[0]; const fin=String(id).split(':')[1]||word.slice(-1); const FINS=['ך','ם','ן','ף','ץ']; let opts=shuffle(FINS.filter(f=>f!==fin)).slice(0,2); opts.push(fin); opts=shuffle(opts); setTimeout(()=>sayReadKey(word),320);
+    return `<div class="prompt">${H('באיזו אות נגמרת המילה?','Which letter ends the word?')}</div><div class="word-display" style="direction:rtl;cursor:pointer" onclick="sayReadKey('${escq(word)}')">${word}</div><button class="replay" onclick="sayReadKey('${escq(word)}')">🔊 ${H('שמע שוב','Again')}</button><div class="options three" style="margin-top:12px">${opts.map(o=>`<button class="opt" style="font-size:clamp(34px,11vw,60px)" onclick="${h}(this,${o===fin},'${escq(id)}','sofit')">${o}</button>`).join("")}</div>`;
   }
   if(T==='concept'){ const c=CONCEPTS.find(x=>x.id===id)||CONCEPTS[0]; const ci=Math.floor(Math.random()*2);
     return `<div class="prompt">${t(c.q)}</div>${conScene(c.vals[ci])}<div class="options" style="margin-top:14px">${c.opts.map((o,i)=>`<button class="opt" onclick="${h}(this,${i===ci},'${escq(id)}','concept')">${t(o)}</button>`).join("")}</div>`;
@@ -2024,15 +2014,18 @@ function _buildQ(id,h){
   let opts=shuffle(HEB_LETTERS.filter(x=>x.l!==id)).slice(0,lvl()===1?2:3); opts.push(d); opts=shuffle(opts); setTimeout(()=>speakLetter(d.say),300);
   return `<div class="prompt">${t('p_findletter')}</div><button class="replay" onclick="speakLetter('${escq(d.say)}')">${t('b_again')}</button><div class="options" style="margin-top:18px">${opts.map(o=>`<button class="opt" onclick="${h}(this,${o.l===id},'${escq(id)}','sound')">${o.l}</button>`).join("")}</div>`;
 }
-function nodeSpeakAnswer(id){ const T=NODE.type; if(T==='math'){ const f=nodeFact(id); setTimeout(()=>playNum(f.ans),250); } else if(T==='words'||T==='readpic'||T==='scramble'){ setTimeout(()=>playWord(id),250); } else if(T==='sofit'){ const s=SOFIT.find(x=>x.base===id); setTimeout(()=>playLetter(s.base,s.say),250); } else if(T==='gender'){ const w=wordByArt(id); if(w) setTimeout(()=>playWord(w.say),250); } else if(T==='sentence'){ const q=SENT.find(x=>x.id===id); if(q){ const a=wordByArt(q.ans); setTimeout(()=>speak(q.lead+' '+(a?a.say:'')),250); } } else if(T==='tense'){ const q=TENSE.find(x=>x.id===id); if(q) setTimeout(()=>speak(q.s),250); } else if(T==='missing'){ const n=+id.split('_')[1]; setTimeout(()=>playNum(n),250); } else if(T==='compare'){ const a=id.split('_'); setTimeout(()=>playNum(Math.max(+a[1],+a[2])),250); } else if(T==='opposite'){ const w=id.replace('opp_',''); const pr=OPPOSITES.find(p=>p[0]===w||p[1]===w); if(pr) setTimeout(()=>speak(pr[0]===w?pr[1]:pr[0]),250); } else if(T==='read'){ const it=READ_BY[id]; if(it) setTimeout(()=>sayReadKey(it.say),250); } else if(T==='concept'||T==='oddone'){ } else { const d=HEB_LETTERS.find(x=>x.l===id); if(d) setTimeout(()=>playLetter(d.l,d.say),250); } }
+function nodeSpeakAnswer(id){ const T=NODE.type; if(T==='math'){ const f=nodeFact(id); setTimeout(()=>playNum(f.ans),250); } else if(T==='words'||T==='readpic'||T==='scramble'){ setTimeout(()=>playWord(id),250); } else if(T==='sofit'){ const s=SOFIT.find(x=>x.base===id); setTimeout(()=>playLetter(s.base,s.say),250); } else if(T==='gender'){ const w=wordByArt(id); if(w) setTimeout(()=>playWord(w.say),250); } else if(T==='sentence'){ const q=SENT.find(x=>x.id===id); if(q){ const a=wordByArt(q.ans); setTimeout(()=>speak(q.lead+' '+(a?a.say:'')),250); } } else if(T==='tense'){ const q=TENSE.find(x=>x.id===id); if(q) setTimeout(()=>speak(q.s),250); } else if(T==='missing'){ const n=+id.split('_')[1]; setTimeout(()=>playNum(n),250); } else if(T==='compare'){ const a=id.split('_'); setTimeout(()=>playNum(Math.max(+a[1],+a[2])),250); } else if(T==='opposite'){ const w=id.replace('opp_',''); const pr=OPPOSITES.find(p=>p[0]===w||p[1]===w); if(pr) setTimeout(()=>speak(pr[0]===w?pr[1]:pr[0]),250); } else if(T==='read'||T==='blend'){ const it=READ_BY[id]; if(it) setTimeout(()=>sayReadKey(it.say),250); } else if(T==='concept'||T==='oddone'||T==='phon'||T==='sofitword'){ } else { const d=HEB_LETTERS.find(x=>x.l===id); if(d) setTimeout(()=>playLetter(d.l,d.say),250); } }
 let nScr={letters:[],next:0,cb:null};
-function nodeScramble(id,cb){ const w=WORDS.find(x=>x.say===id); if(!w){ cb&&cb(); return; } nScr={letters:id.split(''),next:0,cb:cb};
+function nodeScramble(id,cb){ let w=WORDS.find(x=>x.say===id); let letters, picHtml; const isW=!!w;
+  if(w){ letters=id.split(''); picHtml=`<div class="pic-art" onclick="playWord('${escq(id)}')">${art(w.art)}</div>`; }
+  else { const it=READ_BY[id]; if(!it){ cb&&cb(); return; } const clean=stripNikud(String(it.say||it.he||id)); letters=clean.split(''); picHtml=`<div class="word-display" style="direction:rtl;cursor:pointer;font-size:clamp(30px,9vw,52px)" onclick="sayReadKey('${escq(it.say||it.he)}')">${it.he}</div>`; }
+  nScr={letters:letters,next:0,cb:cb};
   let mixed=shuffle(nScr.letters),g=0; while(mixed.join('')===nScr.letters.join('')&&g++<10) mixed=shuffle(nScr.letters);
   app.innerHTML=`<div class="screen">${nodeBar()}<div class="card"><div class="prompt">${t('p_scramble')}</div>
-    <div class="pic-art" onclick="playWord('${escq(id)}')">${art(w.art)}</div>
+    ${picHtml}
     <div class="slots">${nScr.letters.map((_,i)=>`<div class="slot" id="nslot${i}"></div>`).join("")}</div>
     <div class="pool">${mixed.map((ch,i)=>`<button class="tile" id="ntile${i}" onclick="nScrTile(this,'${escq(ch)}')">${ch}</button>`).join("")}</div></div></div>`;
-  setTimeout(()=>playWord(id),300);
+  if(isW) setTimeout(()=>playWord(id),300); else setTimeout(()=>sayReadKey((READ_BY[id]||{}).say||id),300);
 }
 function nScrTile(btn,ch){ if(ch===nScr.letters[nScr.next]){ const s=document.getElementById('nslot'+nScr.next); if(s){ s.textContent=ch; s.classList.add('filled'); } btn.classList.add('used'); tone(520+nScr.next*90,0,.14); nScr.next++; if(nScr.next>=nScr.letters.length){ chime(); flash('🧩'); const c=nScr.cb; nScr.cb=null; if(c) c(); } } else { buzz(); btn.classList.add('shake'); setTimeout(()=>btn.classList.remove('shake'),320); } }
 function nodeAsk(id){ if(NODE.type==='scramble'){ return nodeScramble(id,()=>nodeAns(null,true,id,'scramble')); } app.innerHTML=`<div class="screen">${nodeBar()}<div class="card">${buildQ(id,'nodeAns')}</div></div>`; }
@@ -2041,7 +2034,7 @@ function nodeAns(btn,ok,id,form){ stopAudio();
   if(ok){ chime(); if(btn) btn.classList.add("right"); flash(rnd(PRAISE_EMO)); nodeSpeakAnswer(id); adv(nodeLearn,1000); }
   else { buzz(); if(btn) btn.classList.add("wrong"); flash(rnd(NUDGE_EMO)); nodeSpeakAnswer(id); adv(nodeLearn,1600); }
 }
-function nodeToTest(){ const QN=Math.min(18,Math.max(14,NODE.ids.length*2)); let pool=[]; while(pool.length<QN){ pool=pool.concat(shuffle(NODE.ids)); } NODE.tIds=pool.slice(0,QN); NODE.tIdx=0; NODE.tScore=0;
+function nodeToTest(){ const _core=isCoreReading(NODE_BY_ID[NODE.id]); const QN=_core?Math.min(10,Math.max(6,NODE.ids.length*2)):Math.min(18,Math.max(14,NODE.ids.length*2)); let pool=[]; while(pool.length<QN){ pool=pool.concat(shuffle(NODE.ids)); } NODE.tIds=pool.slice(0,QN); NODE.tIdx=0; NODE.tScore=0;
   app.innerHTML=`<div class="screen">${nodeBar()}<div class="card"><div class="prompt" style="font-weight:bold">${t('lesson_test_intro')}</div><div style="font-size:56px">📝</div><button class="replay" style="background:#f6c343;box-shadow:0 5px 0 #d6a01f;color:#6b4f00" onclick="nodeTestStep()">${t('l_start_test')}</button></div></div>`;
 }
 function nodeTestStep(){ if(NODE.tIdx>=NODE.tIds.length) return nodeReward();
@@ -2051,7 +2044,14 @@ function nodeTestStep(){ if(NODE.tIdx>=NODE.tIds.length) return nodeReward();
 }
 function nodeTestAns(btn,ok,id,form){ stopAudio(); const p=prof(); if(ok){ NODE.tScore++; praise(0.4); } else { nudge(); } onResult(p,id,ok,form); record(nodeCat(),id,ok); addXP(2); NODE.tIdx++; setTimeout(nodeTestStep,850); }
 function nodeReward(){
-  const p=prof(); const acc=NODE.tIds.length?NODE.tScore/NODE.tIds.length:0; const stars=acc>=1?3:(acc>=.8?2:(acc>=.6?1:0)); const pass=stars>=1;
+  const p=prof(); if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={};
+  const _node=NODE_BY_ID[NODE.id]||{}; const _core=isCoreReading(_node);
+  const acc=NODE.tIds.length?NODE.tScore/NODE.tIds.length:0;
+  const _fails=p.path.fails[NODE.id]||0; let _need=_core?0.8:0.6;
+  if(_core && _fails>=2){ _need=0.6; }
+  const pass=acc>=_need-1e-9;
+  let stars; if(_core){ stars=acc>=1?3:(acc>=0.9?2:(acc>=0.8?1:0)); if(pass&&stars===0) stars=1; } else { stars=acc>=1?3:(acc>=0.8?2:(acc>=0.6?1:0)); }
+  if(pass){ p.path.fails[NODE.id]=0; } else { p.path.fails[NODE.id]=_fails+1; }
   if(pass){ const pr=p.path.progress[NODE.id]||{}; const fresh3=stars===3&&(pr.stars||0)<3; const firstDone=!pr.done; const coinsEarned=firstDone?stars:0; jumpFromId=NODE.id; p.path.progress[NODE.id]={done:true,stars:Math.max(stars,pr.stars||0),bestAcc:Math.max(acc,pr.bestAcc||0),ts:Date.now()}; addXP(10+(fresh3?5:0)); if(coinsEarned){ p.coins=(p.coins||0)+coinsEarned; } bumpStreak(); const hitDaily=dailyTick(); if(hitDaily) p.coins=(p.coins||0)+2;
     const _u=NODE_BY_ID[NODE.id]._unit; const _uNodes=NODES.filter(n=>n._unit===_u); const _uAll=_uNodes.every(n=>{ const d=p.path.progress[n.id]; return d&&d.done; }); p.unitsDone=p.unitsDone||{}; const _uKey='u'+PATH_UNITS.indexOf(_u); const unitJustDone=_uAll&&!p.unitsDone[_uKey]; if(unitJustDone){ p.unitsDone[_uKey]=true; p.coins=(p.coins||0)+5; }
     _chestOpened=false; const showChest=!unitJustDone&&Math.random()<0.3;
@@ -2073,7 +2073,8 @@ function nodeReward(){
     </div></div>`;
     for(let i=0;i<coinsEarned;i++) setTimeout(()=>{ try{ tone(880,0,.12); tone(1180,.08,.16); }catch(e){} }, 220+i*180);
   } else {
-    app.innerHTML=`<div class="screen">${topbar()}<div class="card"><div class="prompt">${H('כמעט! בואו ננסה שוב 💪','Almost! try again 💪')}</div>
+    const _softMsg=(p.path.fails&&p.path.fails[NODE.id]>=2)?`<div class="speak-hint" style="margin:6px 0 10px;color:#6a5acd">${H('זה בסדר גמור — הפעם יהיה קצת יותר קל 💛','It is OK — this time will be a little easier 💛')}</div>`:'';
+    app.innerHTML=`<div class="screen">${topbar()}<div class="card"><div class="prompt">${H('כמעט! בואו ננסה שוב 💪','Almost! try again 💪')}</div>${_softMsg}
       <button class="replay" style="background:#f6c343;box-shadow:0 5px 0 #d6a01f;color:#6b4f00" onclick="nodeToTest()">${t('b_playagain')}</button><br>
       <button class="replay" style="margin-top:12px" onclick="pathScreen()">${t('b_menu')}</button>
     </div></div>`;
@@ -2093,7 +2094,7 @@ function svgHill(yTop,color,W){ const t=Math.round(yTop); const w=W||384; return
 function nodeFace(n){ const T=n.type; if(T==='letters'||T==='sofit'){ const it=n.items; return it.length<=3?it.join(''):it[0]+'–'+it[it.length-1]; } if(T==='math'){ return n.items[0].indexOf('sub')===0?'−':'+'; } if(T==='readpic') return '📖'; if(T==='words') return '🖼️'; if(T==='scramble') return '🧩'; if(T==='gender') return '👫'; if(T==='sentence') return '📝'; if(T==='tense') return '⏳'; if(T==='concept') return '📍'; if(T==='compare') return '⚖️'; if(T==='missing') return '❓'; if(T==='oddone') return '🔍'; if(T==='opposite') return '↔️'; return '⭐'; }
 CONCEPTS.forEach((c,i)=>{ c.id=['inout','onunder','updown'][i]||('con'+i); });
 SENT.forEach((s,i)=>{ s.id='se'+i; }); TENSE.forEach((s,i)=>{ s.id='te'+i; });
-const NODE_TEACH={letters:1,sofit:1,words:1,readpic:1,math:1,read:1};
+const NODE_TEACH={letters:1,sofit:1,words:1,readpic:1,math:1,read:1,lettersnd:1,letterpair:1,blend:1,sofitword:1};
 const ODDONE=[
   {g:["dog","cat","lion"],odd:"apple"},{g:["apple","banana","cake"],odd:"car"},{g:["sun","moon","star"],odd:"fish"},
   {g:["car","bus","train"],odd:"banana"},{g:["fish","dolphin","shark"],odd:"tree"},{g:["apple","banana","orange"],odd:"dog"},
@@ -2120,7 +2121,8 @@ function pathBG(W,H,bands){ let defs='',body='';
 function pathScreen(){
   clearAdv(); backTo=null; if(typeof stopArcade==='function') stopArcade(); if(window.speechSynthesis) speechSynthesis.cancel();
   const p=prof();
-  if(!p.placementDone) return placementIntro();
+  if(!p.path) p.path={progress:{},fails:{}}; if(!p.path.fails) p.path.fails={};
+  if(!p.placementDone){ p.placementDone=true; save(); }
   const W=384, cx=W/2, amp=98, sp=134, hGap=62, top=38;
   let y=top; const headers=[], nodesL=[], pts=[]; let gi=0;
   PATH_UNITS.forEach(u=>{
@@ -2143,7 +2145,7 @@ function pathScreen(){
   headers.forEach(h=>{ inner+=`<div class="punit" style="top:${h.y-14}px"><span>${h.u.icon} ${lang==='en'?h.u.en:h.u.u} · ${h.done}/${h.u.nodes.length}</span></div>`; });
   nodesL.forEach(o=>{
     const st=o.st, n=o.n; const g=nodeFace(n);
-    const isMath=n.type==='math', isTxt=(n.type==='letters'||n.type==='sofit'||isMath);
+    const isMath=n.type==='math', isTxt=(n.type==='letters'||n.type==='sofit'||n.type==='lettersnd'||n.type==='letterpair'||isMath);
     const fs=isMath?'46px':(isTxt?(g.length<=2?'32px':'24px'):'40px');
     const titleHtml=`<div class="ptitle">${n.title}</div>`;
     let bub, click, faceHtml, extra='';
@@ -2960,6 +2962,14 @@ const WORLDS=[
 ];
 const WORLD_BY={}; WORLDS.forEach(w=>{ WORLD_BY[w.id]=w; });
 const READ_BY={}; WORLDS.forEach(w=>{ if(w.mode==='read') w.items.forEach(it=>{ if(!READ_BY[it.id]) READ_BY[it.id]=it; }); });
+// מילות CVC חדשות לקריאה-תחילה (שׁ ל מ ר א ת + קמץ/חיריק). אודיו יתווסף בסבב ב' (כרגע שקט).
+const PATH_READ_EXTRA=[
+  {id:'cw_sham',he:'שָׁם',say:'שָׁם',en:'there'},{id:'cw_shar',he:'שָׁר',say:'שָׁר',en:'sang'},
+  {id:'cw_mar',he:'מַר',say:'מַר',en:'mr'},{id:'cw_ram',he:'רָם',say:'רָם',en:'loud'},
+  {id:'cw_tam',he:'תָּם',say:'תָּם',en:'done'},{id:'cw_tamar',he:'תָּמָר',say:'תָּמָר',en:'Tamar'},
+  {id:'cw_amar',he:'אָמַר',say:'אָמַר',en:'said'},{id:'cw_shamar',he:'שָׁמַר',say:'שָׁמַר',en:'kept'}
+];
+PATH_READ_EXTRA.forEach(it=>{ if(!READ_BY[it.id]) READ_BY[it.id]=it; });
 function worldVisual(w,it,size){ size=size||90;
   if(w.mode==='read') return `<div style="font-size:${Math.round(size*0.62)}px;font-weight:bold;color:${w.color};line-height:1.1;direction:rtl">${it.he}</div>`;
   if(w.mode==='shape') return `<svg viewBox="0 0 100 100" style="width:${size}px;height:${size}px">${it.svg}</svg>`;
