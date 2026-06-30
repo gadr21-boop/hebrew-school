@@ -374,9 +374,69 @@ function famCode(){ try{ return localStorage.getItem('famCode')||''; }catch(e){ 
 function setFamCode(c){ try{ if(c) localStorage.setItem('famCode',c); else localStorage.removeItem('famCode'); }catch(e){} }
 function genFamCode(){ const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c=''; for(let i=0;i<8;i++) c+=a[Math.floor(Math.random()*a.length)]; return c; }
 async function supaRpc(fn,body){ const r=await fetch(SUPA_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!r.ok) throw new Error('rpc '+r.status); const txt=await r.text(); return txt?JSON.parse(txt):null; }
+// ===== חשבון: אימייל + סיסמה עם אימות מייל (Supabase Auth / GoTrue REST, בלי ספרייה) =====
+const AUTH_KEY='hsAuth';
+function getAuth(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch(e){ return null; } }
+function setAuth(s){ try{ if(s) localStorage.setItem(AUTH_KEY,JSON.stringify(s)); else localStorage.removeItem(AUTH_KEY); }catch(e){} }
+function clearAuth(){ setAuth(null); }
+function jwtSub(tok){ try{ const p=tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(decodeURIComponent(escape(atob(p)))).sub; }catch(e){ try{ return JSON.parse(atob(tok.split('.')[1])).sub; }catch(e2){ return null; } } }
+async function gotrue(path,body){ const r=await fetch(SUPA_URL+'/auth/v1'+path,{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}); let j=null; try{ j=await r.json(); }catch(e){} return {ok:r.ok,status:r.status,j:j||{}}; }
+function authErr(j){ return String((j&&(j.msg||j.error_description||j.error_code||j.error||j.message))||''); }
+function storeSession(s){ if(!s||!s.access_token) return false; const uid=(s.user&&s.user.id)||jwtSub(s.access_token)||null; setAuth({access_token:s.access_token,refresh_token:s.refresh_token||null,expires_at:Date.now()+(((s.expires_in||3600))*1000),uid:uid,email:(s.user&&s.user.email)||null}); return true; }
+async function authSignup(email,password){ const {ok,j}=await gotrue('/signup',{email:email,password:password}); if(!ok) return {ok:false,msg:authErr(j)}; if(j.access_token){ storeSession(j); return {ok:true,session:true}; } return {ok:true,session:false}; }
+async function authLogin(email,password){ const {ok,j}=await gotrue('/token?grant_type=password',{email:email,password:password}); if(ok&&j.access_token){ storeSession(j); return {ok:true}; } const m=authErr(j); return {ok:false,msg:m,unconfirmed:/not.?confirmed|email_not_confirmed/i.test(m)}; }
+async function authResend(email){ try{ const {ok,j}=await gotrue('/resend',{type:'signup',email:email}); return {ok:ok,msg:authErr(j)}; }catch(e){ return {ok:false,msg:'net'}; } }
+async function authRefresh(){ const a=getAuth(); if(!a||!a.refresh_token) return false; const {ok,j}=await gotrue('/token?grant_type=refresh_token',{refresh_token:a.refresh_token}); if(ok&&j.access_token){ storeSession(j); return true; } return false; }
+function authLogout(){ clearAuth(); authScreen('login'); }
+async function ensureToken(){ const a=getAuth(); if(!a) return null; if(a.expires_at && a.expires_at < Date.now()+30000){ await authRefresh(); } return getAuth(); }
+// ----- ענן מאומת (per-user, RLS על user_progress) -----
+async function cloudPullAuth(){ const a=await ensureToken(); if(!a||!a.access_token) return false; try{ const r=await fetch(SUPA_URL+'/rest/v1/user_progress?select=data,updated_at&limit=1',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+a.access_token}}); if(!r.ok) return false; const rows=await r.json(); const d=rows&&rows[0]&&rows[0].data; if(d&&d.profiles&&Object.keys(d.profiles).length>0&&((d._ts||0)>=(data._ts||0))){ data=d; try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch(e){} return true; } }catch(e){} return false; }
 let _cloudT=null;
-function cloudPush(){ const c=famCode(); if(!c) return; clearTimeout(_cloudT); _cloudT=setTimeout(function(){ supaRpc('save_progress',{p_code:c,p_data:data}).catch(function(){}); },1500); }
-async function cloudPull(force){ const c=famCode(); if(!c) return false; try{ const d=await supaRpc('load_progress',{p_code:c}); if(d&&d.profiles&&Object.keys(d.profiles).length>0&&(force||(d._ts||0)>(data._ts||0))){ data=d; try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch(e){} return true; } }catch(e){} return false; }
+function cloudPush(){ if(!getAuth()) return; clearTimeout(_cloudT); _cloudT=setTimeout(cloudPushAuth,1500); }
+async function cloudPushAuth(){ const a=await ensureToken(); if(!a||!a.access_token||!a.uid) return; try{ await fetch(SUPA_URL+'/rest/v1/user_progress?on_conflict=user_id',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+a.access_token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{user_id:a.uid,data:data,updated_at:new Date().toISOString()}])}); }catch(e){} }
+async function cloudPull(force){ return cloudPullAuth(); }
+// ----- זרימת כניסה -----
+function appBusy(m){ if(typeof app==='undefined'||!app) return; app.innerHTML=`<div class="screen"><div class="card" style="margin:14vh auto;max-width:340px"><div style="font-size:40px">⏳</div><div class="prompt">${m||H('טוען…','Loading…')}</div></div></div>`; }
+async function afterLogin(){ appBusy(H('טוען את ההתקדמות…','Loading progress…')); let pulled=false; try{ pulled=await cloudPullAuth(); }catch(e){} if(!pulled && Object.keys(data.profiles||{}).length>0){ try{ await cloudPushAuth(); }catch(e){} } load(); appRoute(); }
+async function authBoot(){
+  try{ const h=(typeof location!=='undefined'&&location.hash)||''; if(h.indexOf('access_token=')>=0){ const p=new URLSearchParams(h.replace(/^#/,'')); const at=p.get('access_token'); if(at){ storeSession({access_token:at,refresh_token:p.get('refresh_token'),expires_in:+(p.get('expires_in')||3600),user:{id:jwtSub(at)}}); try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} await afterLogin(); return; } } }catch(e){}
+  const a=getAuth();
+  if(!a){ authScreen('login'); return; }
+  appRoute(); // יש כבר חשבון במכשיר — נכנסים מיד עם הנתונים המקומיים
+  (async()=>{ try{ const ok=await cloudPullAuth(); if(ok) appRoute(); }catch(e){} })();
+}
+// ----- מסכי כניסה/הרשמה -----
+const _AUI='font-size:18px;padding:11px 14px;border-radius:14px;border:2px solid #cdb4ff;width:100%;box-sizing:border-box;margin-bottom:10px;font-family:inherit;direction:ltr;text-align:left';
+function authMsg(m,err){ const e=document.getElementById('auMsg'); if(e){ e.textContent=m; e.style.color=err?'#d64545':'#43a047'; } }
+function _auVals(){ const e=(document.getElementById('auEmail')||{}).value||''; const p=(document.getElementById('auPass')||{}).value||''; return {email:String(e).trim(),pass:String(p)}; }
+function authScreen(mode){ backTo=null; mode=mode||'login'; const isS=mode==='signup';
+  app.innerHTML=`<div class="screen"><h1 style="margin-top:5vh">🏫 ${H('בית הספר לעברית','Hebrew School')}</h1>
+   <div class="card" style="max-width:420px;margin:16px auto">
+    <div class="prompt" style="font-weight:bold;margin-bottom:6px">${isS?H('יצירת חשבון','Create account'):H('כניסה','Sign in')}</div>
+    <div class="speak-hint" style="margin-bottom:14px">${isS?H('אימייל וסיסמה — נשלח אליכם מייל אימות','Email & password — we will send a confirmation email'):H('הזינו אימייל וסיסמה','Enter your email & password')}</div>
+    <input id="auEmail" type="email" autocomplete="email" inputmode="email" placeholder="${H('אימייל','Email')}" style="${_AUI}">
+    <input id="auPass" type="password" autocomplete="${isS?'new-password':'current-password'}" placeholder="${H('סיסמה','Password')}" style="${_AUI}" onkeydown="if(event.key==='Enter'){${isS?'authDoSignup()':'authDoLogin()'}}">
+    <button class="replay" style="width:100%;margin-top:2px;background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff" onclick="${isS?'authDoSignup()':'authDoLogin()'}">${isS?H('צור חשבון ▶','Create account ▶'):H('כניסה ▶','Sign in ▶')}</button>
+    <div id="auMsg" style="min-height:20px;margin-top:12px;text-align:center;font-weight:bold"></div>
+    <div style="text-align:center;margin-top:8px"><button class="rec-b" onclick="authScreen('${isS?'login':'signup'}')">${isS?H('כבר יש לי חשבון — לכניסה','I have an account — sign in'):H('אין לי חשבון — להרשמה','No account — sign up')}</button></div>
+    ${isS?'':`<div style="text-align:center;margin-top:6px"><button class="rec-b" onclick="authResendUI()">${H('שלחו לי שוב מייל אימות','Resend confirmation email')}</button></div>`}
+   </div></div>`;
+}
+function authMsgText(m){ if(!m) return ''; if(/already.?registered|already.?been|user_already_exists|exists/i.test(m)) return H('האימייל כבר רשום — נסו להתחבר','Email already registered — try signing in'); if(/weak|at least 6|password.*short|short.*password/i.test(m)) return H('הסיסמה חלשה מדי (לפחות 6 תווים)','Password too weak (min 6 chars)'); if(/rate|too many|limit/i.test(m)) return H('יותר מדי ניסיונות — נסו בעוד דקה','Too many attempts — try again in a minute'); return m; }
+function authDoSignup(){ const v=_auVals(); if(!/.+@.+\..+/.test(v.email)) return authMsg(H('אימייל לא תקין','Invalid email'),1); if(v.pass.length<6) return authMsg(H('סיסמה — לפחות 6 תווים','Password — at least 6 characters'),1); authMsg(H('יוצר חשבון…','Creating account…')); authSignup(v.email,v.pass).then(function(r){ if(!r.ok){ return authMsg(authMsgText(r.msg)||H('לא הצלחנו ליצור חשבון','Could not create account'),1); } if(r.session){ afterLogin(); } else { authConfirmScreen(v.email); } }); }
+function authDoLogin(){ const v=_auVals(); if(!v.email||!v.pass) return authMsg(H('מלאו אימייל וסיסמה','Fill in email & password'),1); authMsg(H('מתחבר…','Signing in…')); authLogin(v.email,v.pass).then(function(r){ if(r.ok){ afterLogin(); } else if(r.unconfirmed){ authMsg(H('צריך לאמת את האימייל קודם — בדקו את תיבת הדואר','Confirm your email first — check your inbox'),1); } else { authMsg(authMsgText(r.msg)||H('אימייל או סיסמה שגויים','Wrong email or password'),1); } }); }
+function authResendUI(){ const v=_auVals(); if(!/.+@.+\..+/.test(v.email)) return authMsg(H('הזינו אימייל קודם','Enter your email first'),1); authMsg(H('שולח…','Sending…')); authResend(v.email).then(function(r){ authMsg(r.ok?H('נשלח מייל אימות ✓','Confirmation sent ✓'):H('לא הצלחנו לשלוח כעת','Could not send right now'),r.ok?0:1); }); }
+function authConfirmScreen(email){ backTo=null; app.innerHTML=`<div class="screen"><div class="card" style="max-width:430px;margin:8vh auto"><div style="font-size:48px">📧</div><div class="prompt" style="font-weight:bold">${H('כמעט שם!','Almost there!')}</div><div class="speak-hint" style="margin:12px 0">${H('שלחנו מייל אימות אל','We sent a confirmation email to')}<br><b style="direction:ltr">${(email||'').replace(/</g,'')}</b><br><br>${H('פתחו אותו, לחצו על הקישור, ואז חזרו לכאן והתחברו.','Open it, click the link, then come back here and sign in.')}</div><button class="replay" style="background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff" onclick="authScreen('login')">${H('חזרה לכניסה','Back to sign in')}</button><br><button class="rec-b" style="margin-top:12px" onclick="authResend('${(email||'').replace(/'/g,'')}')">${H('שלחו שוב','Resend')}</button></div></div>`; }
+// ----- מסך חשבון (באזור ההורים) -----
+function accountScreen(){ backTo=parentArea; const a=getAuth();
+  app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="parentArea()">${t('b_menu')}</button><div class="who">👤 ${H('חשבון','Account')}</div></div>
+   <div class="card"><div class="prompt" style="font-weight:bold">👤 ${H('החשבון שלי','My account')}</div>
+   <div class="speak-hint" style="margin:12px 0">${H('מחובר כ:','Signed in as:')}<br><b style="direction:ltr">${(a&&a.email)||'—'}</b></div>
+   <button class="replay" style="background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff" onclick="cloudSyncNow()">🔄 ${H('סנכרן עכשיו','Sync now')}</button><br>
+   <button class="replay" style="margin-top:12px;background:#f3f0ff;box-shadow:0 4px 0 #cdb4ff;color:#6a5acd;font-size:15px;padding:9px 18px" onclick="authLogout()">${H('התנתקות','Sign out')}</button>
+   <div id="acMsg" style="margin-top:12px;font-weight:bold;min-height:20px"></div></div></div>`;
+}
+function cloudSyncNow(){ const e=document.getElementById('acMsg'); if(e){ e.textContent=H('מסנכרן…','Syncing…'); e.style.color='#43a047'; } cloudPushAuth().then(cloudPullAuth).then(function(){ load(); if(e){ e.textContent=H('סונכרן ✓','Synced ✓'); e.style.color='#43a047'; } }).catch(function(){ if(e){ e.textContent=H('שגיאת רשת','Network error'); e.style.color='#d64545'; } }); }
 function syncMsg(m,err){ const e=document.getElementById('syncMsg'); if(e){ e.textContent=m; e.style.color=err?'#d64545':'#43a047'; } }
 function syncScreen(){ backTo=parentArea; const c=famCode();
   app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="parentArea()">${t('b_menu')}</button><div class="who">☁️ ${H('סנכרון','Sync')}</div></div>
@@ -889,7 +949,7 @@ function parentArea(){ backTo=home; if(window.speechSynthesis) speechSynthesis.c
       <button class="menu-btn" style="grid-column:1/-1;background:linear-gradient(135deg,#6a11cb,#2575fc)" onclick="smartPath()"><span class="emoji">🎯</span>${H('תרגול לפי נושא','Practice by topic')}</button>
       <button class="menu-btn" style="grid-column:1/-1;background:#cdb4ff;color:#3a2a5a" onclick="results()"><span class="emoji">📊</span>${t('h_results')}</button>
       <button class="menu-btn" style="grid-column:1/-1;background:#ff8fb0;color:#fff" onclick="recordStudio()"><span class="emoji">🎙️</span>${t('h_record')}</button>
-      <button class="menu-btn" style="grid-column:1/-1;background:linear-gradient(135deg,#11998e,#38ef7d)" onclick="syncScreen()"><span class="emoji">☁️</span>${H('סנכרון בין מכשירים','Sync devices')}${famCode()?' ✅':''}</button>
+      <button class="menu-btn" style="grid-column:1/-1;background:linear-gradient(135deg,#11998e,#38ef7d)" onclick="accountScreen()"><span class="emoji">👤</span>${H('החשבון שלי','My account')}${getAuth()?' ✅':''}</button>
     </div>
     <button class="replay" style="margin-top:14px" onclick="voiceSettings()">${t('h_voice')}</button>
     <button class="replay" style="margin-top:12px" onclick="placementIntro()">${H('מבחן רמה','Level test')}</button>
@@ -3057,9 +3117,8 @@ load();
 loadVoices();
 loadRecordings();
 if(window.speechSynthesis){ speechSynthesis.onvoiceschanged=()=>loadVoices(); }
-function appRoute(){ if(!famCode() && Object.keys(data.profiles||{}).length===0){ welcomeScreen(); } else { bootScreen(); } }
-appRoute();
-if(famCode()){ cloudPull().then(function(){ load(); appRoute(); }); }
+function appRoute(){ bootScreen(); }
+authBoot();
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
 </script>
 </body>
