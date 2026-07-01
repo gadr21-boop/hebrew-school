@@ -1484,7 +1484,7 @@ function masteredCount(p,ids){ let n=0; ids.forEach(id=>{ if(isMastered(p,id)) n
 function progressBar(n,tot){ const pc=tot?Math.round(100*n/tot):0; return `<div class="bar" style="margin:8px auto 4px;max-width:320px"><div style="width:${pc}%">${n}/${tot}</div></div>`; }
 // ===== תרגול ממוקד: מזהה את הפריטים החלשים ביותר ומגיש מפגש מעורב =====
 let focusIdInfoCache=null;
-function focusIdInfo(){ if(focusIdInfoCache) return focusIdInfoCache; const m={}; NODES.forEach(n=>{ if(n.type==='scramble'||n.type==='phon'||n.type==='sofitword') return; nodeResolveIds(n).forEach(id=>{ if(!m[id]) m[id]={type:n.type}; }); }); focusIdInfoCache=m; return m; }
+function focusIdInfo(){ if(focusIdInfoCache) return focusIdInfoCache; const m={}; NODES.forEach(n=>{ if(n.type==='scramble'||n.type==='phon'||n.type==='sofitword'||n.type==='fillletter'||n.type==='abcorder'||n.type==='lettersong') return; nodeResolveIds(n).forEach(id=>{ if(!m[id]) m[id]={type:n.type}; }); }); focusIdInfoCache=m; return m; }
 function focusWeakPool(){ const p=prof(); const info=focusIdInfo(); const now=Date.now(); const ids=Object.keys(p.mastery||{}).filter(id=>info[id]);
   let weak=ids.filter(id=>{ const r=p.mastery[id]; return r.box<=2 || (r.due&&r.due<=now); });
   if(!weak.length) weak=ids;
@@ -1856,15 +1856,19 @@ function dotClick(num){
 // ================= מסלול למידה (Duolingo/Candy-Crush style) =================
 // ================= מסלול למידה — עורק קריאה (קריאה-תחילה, מועצה 2026-06) =================
 // סדר אותיות לפי שכיחות/צורה; אות=צליל; ניקוד מדורג; הרכבה ומילה מוקדם; זוגות מבלבלים בעימות.
+// ================= מסלול למידה — תוכנית מקיפה (מועצה v2, 2026-06) =================
+// שני צירים: A=פענוח-תחילה (חוסם), B=מועדון הא-ב (שמות/סדר/שיר, לא-חוסם).
+// פתיחה קונקרטית בלתי-ניתנת-לכישלון; השלם-את-האות; סדר-א-ב; שיר-א-ב.
 const PATH_UNITS=[
-  {u:"חימום אוזניים",en:"Ear Warm-up",icon:"👂",col:"c2",nodes:[
-    {id:"p0_first",title:"מה הצליל הראשון?",type:"phon",items:["sh_a","m_a","l_a"],optional:true}
+  {u:"פתיחה: הכירו את שׁ",en:"Opening: Meet Sh",icon:"⭐",col:"c4",nodes:[
+    {id:"op_meet_sh",title:"הכירו את שׁ",type:"lettersnd",items:["ש"],optional:true,single:true},
+    {id:"op_find_sh",title:"מצא את שׁ",type:"lettersnd",items:["ש"],optional:true},
+    {id:"op_shlm",title:"שׁ ל מ ביחד",type:"lettersnd",items:["ש","ל","מ"],optional:true}
   ]},
   {u:"הצלילים הראשונים: שׁ ל מ",en:"First Sounds: Sh L M",icon:"🔤",col:"c1",nodes:[
-    {id:"u1_sh",title:"שׁ אומרת שְׁ",type:"lettersnd",items:["ש"]},
     {id:"u1_l",title:"ל אומרת לְ",type:"lettersnd",items:["ל"]},
     {id:"u1_m",title:"מ אומרת מְ",type:"lettersnd",items:["מ"]},
-    {id:"u1_warm",title:"חימום אוזניים",type:"phon",items:["sh_i","m_i","l_i"],optional:true},
+    {id:"u1_club_shlm",title:"מועדון הא-ב: שִׁין לָמֶד מֵם",type:"letters",items:["ש","ל","מ"],optional:true},
     {id:"u1_mix",title:"מתאמנים — שׁ ל מ",type:"lettersnd",items:["ש","ל","מ"]}
   ]},
   {u:"הניקוד הראשון: אַ אִי",en:"First Vowels: a i",icon:"🎵",col:"c7",nodes:[
@@ -1879,29 +1883,33 @@ const PATH_UNITS=[
     {id:"u3_first_word",title:"המילה הראשונה שלי!",type:"read",items:["cw_sham"]},
     {id:"u3_read_syl",title:"קוראים הברה",type:"read",items:["sh_a","sh_i","m_a","m_i","l_a","l_i"]}
   ]},
-  {u:"ר א ת + עוד מילים",en:"R A T + More Words",icon:"🔤",col:"c4",nodes:[
+  {u:"ר א ת + עוד מילים",en:"R A T + More Words",icon:"🔤",col:"c2",nodes:[
     {id:"u4_r",title:"ר אומרת רְ",type:"lettersnd",items:["ר"]},
     {id:"u4_t",title:"ת אומרת תְּ",type:"lettersnd",items:["ת"]},
     {id:"u4_a",title:"א השקטה — נותנת לתנועה לדבר",type:"lettersnd",items:["א"]},
     {id:"u4_blend_rt",title:"מרכיבים ר ו-ת",type:"blend",items:["r_a","r_i","t_a","t_i"]},
     {id:"u4_word",title:"קוראים מילים חדשות",type:"read",items:["cw_shar","cw_mar","cw_ram","cw_tam","cw_tamar","cw_amar"]},
+    {id:"u4_song",title:"בונוס: שיר הא-ב 🎵",type:"lettersong",items:[],optional:true},
     {id:"u4_mix",title:"מתאמנים — 6 אותיות",type:"lettersnd",items:["ש","ל","מ","ר","א","ת"]}
   ]},
   {u:"קוראים ומסדרים (CVC)",en:"Read & Build",icon:"📖",col:"c3",nodes:[
     {id:"u5_build",title:"מסדרים אותיות למילה",type:"scramble",items:["cw_tam","cw_ram","cw_shar"]},
+    {id:"u5_fill",title:"השלם את האות החסרה",type:"fillletter",items:["cw_tamar","cw_shar","cw_mar"]},
     {id:"u5_read_test",title:"מבחן קריאה — מילים קצרות",type:"read",items:["cw_tamar","cw_shar","cw_mar","cw_ram","cw_amar","cw_sham"]},
     {id:"u5_bonus",title:"בונוס: מה לא שייך?",type:"oddone",items:["odd0","odd1","odd2"],bonus:true}
   ]},
-  {u:"כל הניקוד + ב י ה",en:"All Vowels + B Y H",icon:"🔤",col:"c2",nodes:[
+  {u:"כל הניקוד + ב י ה",en:"All Vowels + B Y H",icon:"🔤",col:"c8",nodes:[
     {id:"u6_vowels",title:"עוד צלילים: אֶ אוֹ אוּ",type:"read",items:["sh_e","sh_o","sh_u"]},
     {id:"u6_b",title:"ב אומרת בְּ",type:"lettersnd",items:["ב"]},
     {id:"u6_y",title:"י אומרת יְ",type:"lettersnd",items:["י"]},
     {id:"u6_h",title:"ה אומרת הְ",type:"lettersnd",items:["ה"]},
-    {id:"u6_blend_b",title:"מרכיבים עם בּ — כל התנועות",type:"blend",items:["ba","be","bi","bo","bu"]}
+    {id:"u6_blend_b",title:"מרכיבים עם בּ — כל התנועות",type:"blend",items:["ba","be","bi","bo","bu"]},
+    {id:"u6_abc",title:"מי בא אחרי? (אותיות מוכרות)",type:"abcorder",items:["ש","ל","מ","ר","א","ת","ב","י","ה"],optional:true}
   ]},
-  {u:"קוראים מילים אמיתיות",en:"Reading Real Words",icon:"📚",col:"c8",nodes:[
+  {u:"קוראים מילים אמיתיות",en:"Reading Real Words",icon:"📚",col:"c1",nodes:[
     {id:"u7_fam",title:"אבא · אמא · מים",type:"read",items:["aba","ima","mayim"]},
     {id:"u7_more",title:"עוד מילים לקריאה",type:"read",items:["cw_tamar","cw_amar","cw_shamar"]},
+    {id:"u7_fill",title:"השלם את האות",type:"fillletter",items:["aba","ima","mayim"]},
     {id:"u7_lion",title:"קוראים ובוחרים תמונה",type:"readpic",items:["lion"]}
   ]},
   {u:"ד ק נ ס — זהירות, ד מול ר!",en:"D K N S: D vs R",icon:"⚠️",col:"c6",nodes:[
@@ -1909,6 +1917,7 @@ const PATH_UNITS=[
     {id:"u8_dr",title:"ד או ר? לא להתבלבל",type:"letterpair",items:["ד","ר"]},
     {id:"u8_kns",title:"ק נ ס — הצלילים",type:"lettersnd",items:["ק","נ","ס"]},
     {id:"u8_blend_ns",title:"מרכיבים נ ס ד",type:"blend",items:["read_n_a","read_n_i","read_s_a","read_s_i","read_d_a","read_d_i"]},
+    {id:"u8_song",title:"בונוס: שיר הא-ב 🎵",type:"lettersong",items:[],optional:true},
     {id:"u8_word",title:"קוראים: סוּס · סָבָא",type:"read",items:["sus","saba"]}
   ]},
   {u:"ו פ כ — ב מול כ",en:"V P K: B vs K",icon:"🔤",col:"c1",nodes:[
@@ -1916,6 +1925,7 @@ const PATH_UNITS=[
     {id:"u9_p",title:"פ אומרת פְּ",type:"lettersnd",items:["פ"]},
     {id:"u9_k",title:"כ אומרת כְּ",type:"lettersnd",items:["כ"]},
     {id:"u9_bk",title:"ב או כ? לא להתבלבל",type:"letterpair",items:["ב","כ"]},
+    {id:"u9_fill",title:"השלם את האות",type:"fillletter",items:["sus","saba"]},
     {id:"u9_word",title:"קוראים: יָד · פֶּה · אַף",type:"read",items:["rw_0","rw_1","rw_2"]},
     {id:"u9_bonus",title:"בונוס: גדול או קטן?",type:"compare",items:["cmp_2_5","cmp_7_3","cmp_4_8"],bonus:true}
   ]},
@@ -1930,20 +1940,23 @@ const PATH_UNITS=[
     {id:"u11_m",title:"מ שנהיית ם בסוף",type:"sofitword",items:["מַיִם:ם"]},
     {id:"u11_f",title:"ף בסוף מילה",type:"sofitword",items:["קוֹף:ף"]},
     {id:"u11_n",title:"ן בסוף מילה",type:"sofitword",items:["גָּן:ן"]},
-    {id:"u11_ts",title:"ץ בסוף מילה",type:"sofitword",items:["עֵץ:ץ"]}
+    {id:"u11_ts",title:"ץ בסוף מילה",type:"sofitword",items:["עֵץ:ץ"]},
+    {id:"u11_song",title:"בונוס: שיר הא-ב 🎵",type:"lettersong",items:[],optional:true}
   ]},
   {u:"קוראים הרבה — גשר לשטף",en:"Fluency Bridge",icon:"🏆",col:"c4",nodes:[
     {id:"u12_readpic",title:"קוראים מילים — תמונות",type:"readpic",items:["dog","cat","fish","sun","ball"]},
     {id:"u12_scramble",title:"מסדרים מילים",type:"scramble",items:["dog","cat","sun"]},
     {id:"u12_sentence",title:"קוראים משפט",type:"sentence",items:["se0","se1","se2"]},
     {id:"u12_words",title:"מילה לתמונה (אוצר מילים)",type:"words",items:["dog","cat","fish","lion"],bonus:true},
-    {id:"u12_test",title:"מבחן קריאה גדול",type:"read",items:["aba","ima","mayim","sus","saba","rw_0","rw_2"]}
+    {id:"u12_abc_final",title:"סדר הא-ב המלא — א עד ת",type:"abcorder",items:["א","ב","ג","ד","ה","ו","ז","ח","ט","י","כ","ל","מ","נ","ס","ע","פ","צ","ק","ר","ש","ת"],optional:true},
+    {id:"u12_test",title:"מבחן קריאה גדול",type:"read",items:["aba","ima","mayim","sus","saba","rw_0","rw_2"]},
+    {id:"u12_cert",title:"תעודת-קורא 🎓",type:"lettersong",items:[],optional:true}
   ]}
 ];
 // --- צמתי ליבת-קריאה: שער מעבר גבוה (80%) עם רשת-נפילה; השאר (בונוס/חימום) 60% ---
-function isCoreReading(n){ return !!(n && !n.bonus && !n.optional && ['lettersnd','letterpair','blend','read','sofitword'].indexOf(n.type)>=0); }
+function isCoreReading(n){ return !!(n && !n.bonus && !n.optional && ['lettersnd','letterpair','blend','read','sofitword','fillletter'].indexOf(n.type)>=0); }
 // --- canDecode: אכיפת "אין מילה לפני אותיותיה". כלי-עזר + audit (window.auditPath) ---
-const WORLD_LETTERS=[ [], ["ש","ל","מ"], [], [], ["ר","א","ת"], [], ["ב","י","ה"], [], ["ד","ק","נ","ס"], ["ו","פ","כ"], ["ע","ח","ג","ז","ט","צ"], [], [] ];
+const WORLD_LETTERS=[ ["ש","ל","מ"], [], [], [], ["ר","א","ת"], [], ["ב","י","ה"], [], ["ד","ק","נ","ס"], ["ו","פ","כ"], ["ע","ח","ג","ז","ט","צ"], [], [] ];
 const WORLD_VOWELS=[ [], [], ["a","i"], [], [], [], ["e","o","u"], [], [], [], [], [], [] ];
 const SOFIT_BASE={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
 const NIK_VOWEL={"ָ":"a","ַ":"a","ִ":"i","ֵ":"e","ֶ":"e","ֹ":"o","ֻ":"u","ּ":null,"ְ":null,"ֱ":"e","ֲ":"a","ֳ":"o","ׁ":null,"ׂ":null};
@@ -1970,8 +1983,24 @@ function bumpStreak(){ const p=prof(); const ts=todayStr(); const s=p.streak||(p
 // ----- נגן שלב (node) -----
 let NODE={id:null,type:null,ids:[],last:null,taught:{},correct:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0};
 function nodeBar(){ const n=NODE_BY_ID[NODE.id]; return `<div class="topbar"><button class="back-btn" onclick="pathScreen()">${t('b_menu')}</button><div class="who">${n._unit.icon} ${lang==='en'?n._unit.en:n.title}</div></div>`; }
-function nodeCat(){ return ({math:'math',words:'words',readpic:'words',sofit:'sofit',letters:'letters',concept:'concepts',gender:'gender',sentence:'sentence',tense:'tense',scramble:'scramble',compare:'math',missing:'math',oddone:'concepts',opposite:'words',read:'reading',lettersnd:'letters',letterpair:'letters',blend:'reading',phon:'reading',sofitword:'sofit'})[NODE.type]||'letters'; }
-function startNode(id){ const n=NODE_BY_ID[id]; if(!n) return; clearAdv(); NODE={id:id,type:n.type,ids:nodeResolveIds(n),last:null,taught:{},covered:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0}; nodeLearn(); }
+function nodeCat(){ return ({math:'math',words:'words',readpic:'words',sofit:'sofit',letters:'letters',concept:'concepts',gender:'gender',sentence:'sentence',tense:'tense',scramble:'scramble',compare:'math',missing:'math',oddone:'concepts',opposite:'words',read:'reading',lettersnd:'letters',letterpair:'letters',blend:'reading',phon:'reading',sofitword:'sofit',fillletter:'reading',abcorder:'letters',lettersong:'letters'})[NODE.type]||'letters'; }
+function startNode(id){ const n=NODE_BY_ID[id]; if(!n) return; clearAdv(); NODE={id:id,type:n.type,ids:nodeResolveIds(n),last:null,taught:{},covered:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0}; if(n.type==='lettersong') return nodeLettersong(id); nodeLearn(); }
+function nodeAllow(){ const u=NODE_BY_ID[NODE.id]&&NODE_BY_ID[NODE.id]._unit; const idx=u?PATH_UNITS.indexOf(u):0; return cumAllow(idx<0?0:idx); }
+function heClusters(s){ const out=[]; for(const ch of String(s||'')){ if(ch>='א'&&ch<='ת'){ out.push({base:ch,full:ch}); } else if(out.length){ out[out.length-1].full+=ch; } } return out; }
+const ABC_ORDER='אבגדהוזחטיכלמנסעפצקרשת';
+function nodeLettersong(id){ const cert=(id==='u12_cert'); const keys=HEB_LETTERS.map(x=>'L:'+x.l);
+  app.innerHTML=`<div class="screen">${nodeBar()}<div class="card">
+    <div class="prompt" style="font-weight:bold">${cert?('🎓 '+H('תעודת קורא — כל הכבוד!','Reader certificate — well done!')):('🎵 '+H('שיר הא-ב','The ABC Song'))}</div>
+    ${cert?'<div style="font-size:54px;margin:6px 0">🎓</div>':''}
+    <div style="font-size:clamp(20px,5.5vw,30px);direction:rtl;line-height:1.9;margin:8px 4px;color:#6a5acd;font-weight:bold">${HEB_LETTERS.map(x=>x.l).join(' ')}</div>
+    <button class="replay" style="background:#4facfe;box-shadow:0 5px 0 #2b8fd6;color:#fff" onclick='playSeq(${JSON.stringify(keys)})'>▶ ${H('נגן את השיר','Play the song')}</button><br>
+    <button class="replay" style="background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff;margin-top:12px" onclick="songComplete('${escq(id)}')">${H('סיימתי ▶','Done ▶')}</button>
+  </div></div>`;
+  setTimeout(function(){ try{ playSeq(keys); }catch(e){} },400);
+}
+function songComplete(id){ const p=prof(); if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={}; const pr=p.path.progress[id]||{}; const prevStars=pr.stars||0; const coinsEarned=Math.max(0,1-prevStars); jumpFromId=id; p.path.progress[id]={done:true,stars:Math.max(1,prevStars),bestAcc:1,ts:Date.now()}; if(coinsEarned) p.coins=(p.coins||0)+coinsEarned;
+  const _u=NODE_BY_ID[id]._unit; const _uAll=NODES.filter(n=>n._unit===_u).every(n=>{ const d=p.path.progress[n.id]; return d&&d.done; }); p.unitsDone=p.unitsDone||{}; const _uKey='u'+PATH_UNITS.indexOf(_u); if(_uAll&&!p.unitsDone[_uKey]){ p.unitsDone[_uKey]=true; p.coins=(p.coins||0)+5; }
+  save(); confetti(); setTimeout(confetti,300); try{ sayPraise(true); }catch(e){} pathScreen(); }
 function nodeLearn(){
   const p=prof();
   const uncovered=NODE.ids.filter(id=>!NODE.covered[id]);
@@ -1991,8 +2020,8 @@ function nodeTeach(id,cont){
     html=`<div style="font-size:clamp(56px,18vw,120px);font-weight:bold;color:#6a5acd">${s.base} → <span style="color:#43cea2">${s.fin}</span></div><div class="prompt" style="color:#ff5fa2">${H('האות הסופית','final form')}</div>`; after=()=>speakLetter(s.say);
   } else if(T==='read'){ const it=READ_BY[id]||{he:id,say:id};
     html=`<div style="font-size:clamp(64px,20vw,140px);font-weight:bold;color:#5b8def;direction:rtl;line-height:1.1">${it.he}</div>`; after=()=>sayReadKey(it.say);
-  } else if(T==='lettersnd'){ const d=HEB_LETTERS.find(x=>x.l===id)||HEB_LETTERS[0]; const w=lettersWithWord(id)[0]; const sndTxt=d.silent?H('שקטה — נותנת לתנועה לדבר','silent — lets the vowel speak'):(d.snd||'');
-    html=`<div class="big-letter" onclick="playLetter('${escq(d.l)}','${escq(d.say)}')">${id}</div><div class="prompt" style="color:#ff5fa2;font-weight:bold">${H('אומרת','says')} ${sndTxt}</div>${w?`<div class="pic-art" onclick="playWord('${escq(w.say)}')">${art(w.art)}</div><div class="word-display">${w.w}</div>`:''}`;
+  } else if(T==='lettersnd'){ const d=HEB_LETTERS.find(x=>x.l===id)||HEB_LETTERS[0]; const w=lettersWithWord(id)[0]; const sndTxt=d.silent?H('בקריאה שקטה','silent in reading'):(d.snd||'');
+    html=`<div class="speak-hint" style="margin-bottom:2px">${H('זאת','This is')} <b style="color:#6a5acd">${d.name}</b></div><div class="big-letter" onclick="playLetter('${escq(d.l)}','${escq(d.say)}')">${id}</div><div class="prompt" style="color:#ff5fa2;font-weight:bold">${H('אומרת','says')} ${sndTxt}</div>${w?`<div class="pic-art" onclick="playWord('${escq(w.say)}')">${art(w.art)}</div><div class="word-display">${w.w}</div>`:''}`;
     after=()=>{ playLetter(d.l,d.say); };
   } else if(T==='letterpair'){ const letters=NODE.ids;
     html=`<div class="prompt" style="font-weight:bold;color:#ff5fa2">${H('שימו לב — אל תתבלבלו!','Careful — easy to mix up!')}</div><div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:6px">${letters.map(l=>{ const dd=HEB_LETTERS.find(x=>x.l===l)||{say:l}; return `<div onclick="playLetter('${escq(l)}','${escq(dd.say)}')" style="font-size:clamp(50px,16vw,104px);font-weight:bold;color:#6a5acd;cursor:pointer">${l}</div>`; }).join('')}</div>`;
@@ -2019,9 +2048,23 @@ function _buildQ(id,h){
     let opts=shuffle(pool).slice(0,3); opts.push(it); opts=shuffle(opts); setTimeout(()=>sayReadKey(it.say),320);
     return `<div class="prompt">${H('מה שמעתם? לחצו על הכתב הנכון','What did you hear? tap the right one')}</div><button class="replay" onclick="sayReadKey('${escq(it.say)}')">🔊 ${H('שמע שוב','Again')}</button><div class="options three" style="margin-top:14px">${opts.map(o=>`<button class="opt" style="font-size:clamp(28px,8vw,48px);min-height:92px;direction:rtl" onclick="${h}(this,${o.id===id},'${escq(id)}','read')">${o.he}</button>`).join("")}</div>`;
   }
-  if(T==='lettersnd'){ const d=HEB_LETTERS.find(x=>x.l===id)||HEB_LETTERS[0]; const silent=!!d.silent; let opts=shuffle(HEB_LETTERS.filter(x=>x.l!==id)).slice(0,lvl()===1?2:3); opts.push(d); opts=shuffle(opts); setTimeout(()=>playLetter(d.l,d.say),300);
+  if(T==='lettersnd'){ const d=HEB_LETTERS.find(x=>x.l===id)||HEB_LETTERS[0]; const silent=!!d.silent; const _node=NODE_BY_ID[NODE.id]||{}; const allow=nodeAllow().L; let opts;
+    if(_node.single){ opts=[d]; } else { let pool=HEB_LETTERS.filter(x=>x.l!==id && allow.has(x.l)); if(pool.length<2) pool=HEB_LETTERS.filter(x=>x.l!==id); opts=shuffle(pool).slice(0,lvl()===1?2:3); opts.push(d); opts=shuffle(opts); }
+    setTimeout(()=>playLetter(d.l,d.say),300);
     const q=silent?(H('מצא את האות','Find the letter')+' '+id):H('איזו אות אומרת את הצליל הזה?','Which letter makes this sound?');
     return `<div class="prompt">${q}</div><button class="replay" onclick="playLetter('${escq(d.l)}','${escq(d.say)}')">🔊 ${t('b_again')}</button><div class="options" style="margin-top:16px">${opts.map(o=>`<button class="opt" style="font-size:clamp(30px,9vw,52px)" onclick="${h}(this,${o.l===id},'${escq(id)}','snd')">${o.l}</button>`).join("")}</div>`;
+  }
+  if(T==='fillletter'){ const it=READ_BY[id]; const w=it?null:WORDS.find(x=>x.say===id); const heRaw=it?it.he:(w?w.w:String(id)); const say=it?it.say:(w?w.say:String(id));
+    const cl=heClusters(heRaw); const cons=[]; for(let i=0;i<cl.length;i++){ const b=cl[i].base; if(b>='א'&&b<='ת'&&!SOFIT_BASE[b]) cons.push(i); }
+    const hi=cons.length?cons[Math.floor(Math.random()*cons.length)]:0; const ansL=SOFIT_BASE[cl[hi]?cl[hi].base:'']||(cl[hi]?cl[hi].base:'א');
+    const allow=nodeAllow().L; let dpool=HEB_LETTERS.filter(x=>x.l!==ansL && allow.has(x.l)); if(dpool.length<2) dpool=HEB_LETTERS.filter(x=>x.l!==ansL); let opts=shuffle(dpool).slice(0,2).map(x=>x.l); opts.push(ansL); opts=shuffle(opts);
+    const shown=cl.map((c,i)=> i===hi? '<span style="display:inline-block;min-width:0.7em;border-bottom:4px solid #ff5fa2;color:#ff5fa2">＿</span>' : c.full).join('');
+    setTimeout(()=>sayReadKey(say),320);
+    return `<div class="prompt">${H('איזו אות חסרה?','Which letter is missing?')}</div><div class="word-display" style="direction:rtl;cursor:pointer" onclick="sayReadKey('${escq(say)}')">${shown}</div><button class="replay" onclick="sayReadKey('${escq(say)}')">🔊 ${t('b_again')}</button><div class="options three" style="margin-top:12px">${opts.map(o=>`<button class="opt" style="font-size:clamp(34px,11vw,60px)" onclick="${h}(this,${o===ansL},'${escq(id)}','fill')">${o}</button>`).join("")}</div>`;
+  }
+  if(T==='abcorder'){ const known=ABC_ORDER.split('').filter(c=>NODE.ids.indexOf(c)>=0); let i=known.indexOf(id); if(i<0||i>=known.length-1) i=Math.max(0,known.length-2); const anchor=known[i]||id; const ans=known[i+1]||anchor;
+    let dpool=known.filter(c=>c!==ans&&c!==anchor); let opts=shuffle(dpool).slice(0,2); opts.push(ans); opts=shuffle(opts);
+    return `<div class="prompt">${H('מי בא אחרי? (לפי הא-ב)','Which comes next? (ABC)')}</div><div style="font-size:clamp(40px,13vw,86px);font-weight:bold;color:#6a5acd;direction:rtl">${anchor} <span style="color:#cdb4ff">→ ?</span></div><div class="options three" style="margin-top:14px">${opts.map(o=>`<button class="opt" style="font-size:clamp(34px,11vw,60px)" onclick="${h}(this,${o===ans},'${escq(id)}','abc')">${o}</button>`).join("")}</div>`;
   }
   if(T==='letterpair'){ const d=HEB_LETTERS.find(x=>x.l===id)||HEB_LETTERS[0]; let opts=NODE.ids.map(x=>HEB_LETTERS.find(y=>y.l===x)).filter(Boolean); if(opts.length<2) opts=opts.concat(shuffle(HEB_LETTERS.filter(x=>x.l!==id)).slice(0,2)); opts=shuffle(opts); setTimeout(()=>playLetter(d.l,d.say),300);
     return `<div class="prompt">${H('איזו אות שמעת?','Which letter did you hear?')}</div><button class="replay" onclick="playLetter('${escq(d.l)}','${escq(d.say)}')">🔊 ${t('b_again')}</button><div class="options" style="margin-top:16px">${opts.map(o=>`<button class="opt" style="font-size:clamp(34px,11vw,60px)" onclick="${h}(this,${o.l===id},'${escq(id)}','pair')">${o.l}</button>`).join("")}</div>`;
@@ -2151,7 +2194,7 @@ function svgTree(x,y,s){ return `<g transform="translate(${x},${y}) scale(${s||1
 function svgStar(x,y){ return `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="1.6" fill="#fff" opacity="0.9"/>`; }
 function svgMoon(x,y){ return `<circle cx="${x}" cy="${y}" r="16" fill="#fdf3c0"/><circle cx="${x+7}" cy="${y-3}" r="14" fill="#2c2768"/>`; }
 function svgHill(yTop,color,W){ const t=Math.round(yTop); const w=W||384; return `<path d="M0 ${t+16} Q ${(w*0.28).toFixed(0)} ${t-8} ${(w*0.5).toFixed(0)} ${t+12} T ${w} ${t+8} L ${w} ${t+48} L 0 ${t+48} Z" fill="${color}" opacity="0.55"/>`; }
-function nodeFace(n){ const T=n.type; if(T==='letters'||T==='sofit'){ const it=n.items; return it.length<=3?it.join(''):it[0]+'–'+it[it.length-1]; } if(T==='math'){ return n.items[0].indexOf('sub')===0?'−':'+'; } if(T==='readpic') return '📖'; if(T==='words') return '🖼️'; if(T==='scramble') return '🧩'; if(T==='gender') return '👫'; if(T==='sentence') return '📝'; if(T==='tense') return '⏳'; if(T==='concept') return '📍'; if(T==='compare') return '⚖️'; if(T==='missing') return '❓'; if(T==='oddone') return '🔍'; if(T==='opposite') return '↔️'; return '⭐'; }
+function nodeFace(n){ const T=n.type; if(T==='lettersnd'){ const it=n.items; return it.length<=3?it.join(''):it[0]+'–'+it[it.length-1]; } if(T==='letterpair') return n.items.join('/'); if(T==='blend') return '🧩'; if(T==='phon') return '👂'; if(T==='read') return '📖'; if(T==='sofitword') return '🔚'; if(T==='fillletter') return '✏️'; if(T==='abcorder') return '🔡'; if(T==='lettersong') return '🎵'; if(T==='letters'||T==='sofit'){ const it=n.items; return it.length<=3?it.join(''):it[0]+'–'+it[it.length-1]; } if(T==='math'){ return n.items[0].indexOf('sub')===0?'−':'+'; } if(T==='readpic') return '📖'; if(T==='words') return '🖼️'; if(T==='scramble') return '🧩'; if(T==='gender') return '👫'; if(T==='sentence') return '📝'; if(T==='tense') return '⏳'; if(T==='concept') return '📍'; if(T==='compare') return '⚖️'; if(T==='missing') return '❓'; if(T==='oddone') return '🔍'; if(T==='opposite') return '↔️'; return '⭐'; }
 CONCEPTS.forEach((c,i)=>{ c.id=['inout','onunder','updown'][i]||('con'+i); });
 SENT.forEach((s,i)=>{ s.id='se'+i; }); TENSE.forEach((s,i)=>{ s.id='te'+i; });
 const NODE_TEACH={letters:1,sofit:1,words:1,readpic:1,math:1,read:1,lettersnd:1,letterpair:1,blend:1,sofitword:1};
