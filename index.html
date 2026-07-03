@@ -1873,19 +1873,22 @@ const PATH_UNITS=[
     {id:"u1_l",title:"ל אומרת לְ",type:"lettersnd",items:["ל"]},
     {id:"u1_m",title:"מ אומרת מְ",type:"lettersnd",items:["מ"]},
     {id:"u1_club_shlm",title:"מועדון הא-ב: שִׁין לָמֶד מֵם",type:"letters",items:["ש","ל","מ"],optional:true},
-    {id:"u1_mix",title:"מתאמנים — שׁ ל מ",type:"lettersnd",items:["ש","ל","מ"]}
+    {id:"u1_sh2",title:"שׁ אומרת שְׁ",type:"lettersnd",items:["ש"]},
+    {id:"u1_mix",title:"📝 מבחן: שׁ ל מ",type:"test",items:[]}
   ]},
   {u:"הניקוד הראשון: אַ אִי",en:"First Vowels: a i",icon:"🎵",col:"c7",nodes:[
     {id:"u2_kamatz",title:"הסימן הזה אומר אַ",type:"read",items:["sh_a"]},
     {id:"u2_chirik",title:"הסימן הזה אומר אִי",type:"read",items:["sh_i"]},
     {id:"u2_disc",title:"אַ או אִי?",type:"read",items:["sh_a","sh_i"]},
-    {id:"u2_gen",title:"אותו סימן על אותיות אחרות",type:"read",items:["sh_a","m_a","l_a"]}
+    {id:"u2_gen",title:"אותו סימן על אותיות אחרות",type:"read",items:["sh_a","m_a","l_a"]},
+    {id:"u2_test",title:"📝 מבחן: אַ ו-אִי",type:"test",items:[]}
   ]},
   {u:"מרכיבים הברה + המילה הראשונה!",en:"Blending + First Word!",icon:"🧩",col:"c5",nodes:[
     {id:"u3_blend_sh",title:"שׁ + תנועה = הברה",type:"blend",items:["sh_a","sh_i"]},
     {id:"u3_blend_ml",title:"מ ו-ל + תנועה",type:"blend",items:["m_a","m_i","l_a","l_i"]},
     {id:"u3_first_word",title:"המילה הראשונה שלי!",type:"read",items:["cw_sham"]},
-    {id:"u3_read_syl",title:"קוראים הברה",type:"read",items:["sh_a","sh_i","m_a","m_i","l_a","l_i"]}
+    {id:"u3_read_syl",title:"קוראים הברה",type:"read",items:["sh_a","sh_i","m_a","m_i","l_a","l_i"]},
+    {id:"u3_test",title:"📝 מבחן: הברות ומילה",type:"test",items:[]}
   ]},
   {u:"ר א ת + עוד מילים",en:"R A T + More Words",icon:"🔤",col:"c2",nodes:[
     {id:"u4_r",title:"ר אומרת רְ",type:"lettersnd",items:["ר"]},
@@ -1894,12 +1897,13 @@ const PATH_UNITS=[
     {id:"u4_blend_rt",title:"מרכיבים ר ו-ת",type:"blend",items:["r_a","r_i","t_a","t_i"]},
     {id:"u4_word",title:"קוראים מילים חדשות",type:"read",items:["cw_shar","cw_mar","cw_ram","cw_tam","cw_tamar","cw_amar"]},
     {id:"u4_song",title:"בונוס: שיר הא-ב 🎵",type:"lettersong",items:[],optional:true},
-    {id:"u4_mix",title:"מתאמנים — 6 אותיות",type:"lettersnd",items:["ש","ל","מ","ר","א","ת"]}
+    {id:"u4_mix",title:"📝 מבחן: 6 אותיות ומילים",type:"test",items:[]}
   ]},
   {u:"קוראים ומסדרים (CVC)",en:"Read & Build",icon:"📖",col:"c3",nodes:[
     {id:"u5_build",title:"מסדרים אותיות למילה",type:"scramble",items:["cw_tam","cw_ram","cw_shar"]},
     {id:"u5_fill",title:"השלם את האות החסרה",type:"fillletter",items:["cw_tamar","cw_shar","cw_mar"]},
-    {id:"u5_read_test",title:"מבחן קריאה — מילים קצרות",type:"read",items:["cw_tamar","cw_shar","cw_mar","cw_ram","cw_amar","cw_sham"]},
+    {id:"u5_words",title:"קוראים מילים קצרות",type:"read",items:["cw_tamar","cw_amar","cw_sham"]},
+    {id:"u5_read_test",title:"📝 מבחן: מילים ראשונות",type:"test",items:[]},
     {id:"u5_bonus",title:"בונוס: מה לא שייך?",type:"oddone",items:["odd0","odd1","odd2"],bonus:true}
   ]},
   {u:"כל הניקוד + ב י ה",en:"All Vowels + B Y H",icon:"🔤",col:"c8",nodes:[
@@ -1908,13 +1912,15 @@ const PATH_UNITS=[
     {id:"u6_y",title:"י אומרת יְ",type:"lettersnd",items:["י"]},
     {id:"u6_h",title:"ה אומרת הְ",type:"lettersnd",items:["ה"]},
     {id:"u6_blend_b",title:"מרכיבים עם בּ — כל התנועות",type:"blend",items:["ba","be","bi","bo","bu"]},
-    {id:"u6_abc",title:"מי בא אחרי? (אותיות מוכרות)",type:"abcorder",items:["ש","ל","מ","ר","א","ת","ב","י","ה"],optional:true}
+    {id:"u6_abc",title:"מי בא אחרי? (אותיות מוכרות)",type:"abcorder",items:["ש","ל","מ","ר","א","ת","ב","י","ה"],optional:true},
+    {id:"u6_test",title:"📝 מבחן: ניקוד ואותיות",type:"test",items:[]}
   ]},
   {u:"קוראים מילים אמיתיות",en:"Reading Real Words",icon:"📚",col:"c1",nodes:[
     {id:"u7_fam",title:"אבא · אמא · מים",type:"read",items:["aba","ima","mayim"]},
     {id:"u7_more",title:"עוד מילים לקריאה",type:"read",items:["cw_tamar","cw_amar","cw_shamar"]},
     {id:"u7_fill",title:"השלם את האות",type:"fillletter",items:["aba","ima","mayim"]},
-    {id:"u7_lion",title:"קוראים ובוחרים תמונה",type:"readpic",items:["lion"]}
+    {id:"u7_lion",title:"קוראים ובוחרים תמונה",type:"readpic",items:["lion"]},
+    {id:"u7_test",title:"📝 מבחן: מילים אמיתיות",type:"test",items:[]}
   ]},
   {u:"ד ק נ ס — זהירות, ד מול ר!",en:"D K N S: D vs R",icon:"⚠️",col:"c6",nodes:[
     {id:"u8_d",title:"ד אומרת דְּ",type:"lettersnd",items:["ד"]},
@@ -1922,7 +1928,8 @@ const PATH_UNITS=[
     {id:"u8_kns",title:"ק נ ס — הצלילים",type:"lettersnd",items:["ק","נ","ס"]},
     {id:"u8_blend_ns",title:"מרכיבים נ ס ד",type:"blend",items:["read_n_a","read_n_i","read_s_a","read_s_i","read_d_a","read_d_i"]},
     {id:"u8_song",title:"בונוס: שיר הא-ב 🎵",type:"lettersong",items:[],optional:true},
-    {id:"u8_word",title:"קוראים: סוּס · סָבָא",type:"read",items:["sus","saba"]}
+    {id:"u8_word",title:"קוראים: סוּס · סָבָא",type:"read",items:["sus","saba"]},
+    {id:"u8_test",title:"📝 מבחן: ד ק נ ס",type:"test",items:[]}
   ]},
   {u:"ו פ כ — ב מול כ",en:"V P K: B vs K",icon:"🔤",col:"c1",nodes:[
     {id:"u9_v",title:"ו אומרת וְ",type:"lettersnd",items:["ו"]},
@@ -1931,20 +1938,22 @@ const PATH_UNITS=[
     {id:"u9_bk",title:"ב או כ? לא להתבלבל",type:"letterpair",items:["ב","כ"]},
     {id:"u9_fill",title:"השלם את האות",type:"fillletter",items:["sus","saba"]},
     {id:"u9_word",title:"קוראים: יָד · פֶּה · אַף",type:"read",items:["rw_0","rw_1","rw_2"]},
-    {id:"u9_bonus",title:"בונוס: גדול או קטן?",type:"compare",items:["cmp_2_5","cmp_7_3","cmp_4_8"],bonus:true}
+    {id:"u9_bonus",title:"בונוס: גדול או קטן?",type:"compare",items:["cmp_2_5","cmp_7_3","cmp_4_8"],bonus:true},
+    {id:"u9_test",title:"📝 מבחן: ו פ כ ומילים",type:"test",items:[]}
   ]},
   {u:"ע ח ג ז ט צ — האחרונות",en:"Last Letters",icon:"🔤",col:"c7",nodes:[
     {id:"u10_ach",title:"ח אומרת חְ, ע שקטה",type:"lettersnd",items:["ח","ע"]},
     {id:"u10_hct",title:"ה או ח או ת? מבחן עיניים",type:"letterpair",items:["ה","ח","ת"]},
     {id:"u10_gzts",title:"ג ז ט צ — הצלילים",type:"lettersnd",items:["ג","ז","ט","צ"]},
     {id:"u10_vz",title:"ו או ז? לא להתבלבל",type:"letterpair",items:["ו","ז"]},
-    {id:"u10_all",title:"מתאמנים — כל האותיות",type:"lettersnd",items:["א","ב","ג","ד","ה","ו","ז","ח","ט","י","כ","ל","מ","נ","ס","ע","פ","צ","ק","ר","ש","ת"]}
+    {id:"u10_all",title:"📝 מבחן: האותיות האחרונות",type:"test",items:[]}
   ]},
   {u:"אותיות סופיות בתוך מילה",en:"Final Letters in Words",icon:"🔚",col:"c5",nodes:[
     {id:"u11_m",title:"מ שנהיית ם בסוף",type:"sofitword",items:["מַיִם:ם"]},
     {id:"u11_f",title:"ף בסוף מילה",type:"sofitword",items:["קוֹף:ף"]},
     {id:"u11_n",title:"ן בסוף מילה",type:"sofitword",items:["גָּן:ן"]},
     {id:"u11_ts",title:"ץ בסוף מילה",type:"sofitword",items:["עֵץ:ץ"]},
+    {id:"u11_test",title:"📝 מבחן: אותיות סופיות",type:"test",items:[]},
     {id:"u11_song",title:"בונוס: שיר הא-ב 🎵",type:"lettersong",items:[],optional:true}
   ]},
   {u:"קוראים הרבה — גשר לשטף",en:"Fluency Bridge",icon:"🏆",col:"c4",nodes:[
@@ -1953,12 +1962,13 @@ const PATH_UNITS=[
     {id:"u12_sentence",title:"קוראים משפט",type:"sentence",items:["se0","se1","se2"]},
     {id:"u12_words",title:"מילה לתמונה (אוצר מילים)",type:"words",items:["dog","cat","fish","lion"],bonus:true},
     {id:"u12_abc_final",title:"סדר הא-ב המלא — א עד ת",type:"abcorder",items:["א","ב","ג","ד","ה","ו","ז","ח","ט","י","כ","ל","מ","נ","ס","ע","פ","צ","ק","ר","ש","ת"],optional:true},
-    {id:"u12_test",title:"מבחן קריאה גדול",type:"read",items:["aba","ima","mayim","sus","saba","rw_0","rw_2"]},
+    {id:"u12_read",title:"קוראים מילים — חזרה",type:"read",items:["aba","ima","mayim","sus","saba","rw_0","rw_2"]},
+    {id:"u12_test",title:"📝 המבחן הגדול",type:"test",items:[]},
     {id:"u12_cert",title:"תעודת-קורא 🎓",type:"lettersong",items:[],optional:true}
   ]}
 ];
 // --- צמתי ליבת-קריאה: שער מעבר גבוה (80%) עם רשת-נפילה; השאר (בונוס/חימום) 60% ---
-function isCoreReading(n){ return !!(n && !n.bonus && !n.optional && ['lettersnd','letterpair','blend','read','sofitword','fillletter'].indexOf(n.type)>=0); }
+function isCoreReading(n){ return !!(n && !n.bonus && !n.optional && ['lettersnd','letterpair','blend','read','sofitword','fillletter','test'].indexOf(n.type)>=0); }
 // --- canDecode: אכיפת "אין מילה לפני אותיותיה". כלי-עזר + audit (window.auditPath) ---
 const WORLD_LETTERS=[ ["ש","ל","מ"], [], [], [], ["ר","א","ת"], [], ["ב","י","ה"], [], ["ד","ק","נ","ס"], ["ו","פ","כ"], ["ע","ח","ג","ז","ט","צ"], [], [] ];
 const WORLD_VOWELS=[ [], [], ["a","i"], [], [], [], ["e","o","u"], [], [], [], [], [], [] ];
@@ -1987,8 +1997,18 @@ function bumpStreak(){ const p=prof(); const ts=todayStr(); const s=p.streak||(p
 // ----- נגן שלב (node) -----
 let NODE={id:null,type:null,ids:[],last:null,taught:{},correct:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0};
 function nodeBar(){ const n=NODE_BY_ID[NODE.id]; return `<div class="topbar"><button class="back-btn" onclick="pathScreen()">${t('b_menu')}</button><div class="who">${n._unit.icon} ${lang==='en'?n._unit.en:n.title}</div></div>`; }
-function nodeCat(){ return ({math:'math',words:'words',readpic:'words',sofit:'sofit',letters:'letters',concept:'concepts',gender:'gender',sentence:'sentence',tense:'tense',scramble:'scramble',compare:'math',missing:'math',oddone:'concepts',opposite:'words',read:'reading',lettersnd:'letters',letterpair:'letters',blend:'reading',phon:'reading',sofitword:'sofit',fillletter:'reading',abcorder:'letters',lettersong:'letters'})[NODE.type]||'letters'; }
-function startNode(id){ const n=NODE_BY_ID[id]; if(!n) return; clearAdv(); NODE={id:id,type:n.type,ids:nodeResolveIds(n),last:null,taught:{},covered:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0}; if(n.type==='lettersong') return nodeLettersong(id); nodeLearn(); }
+function nodeCat(){ return ({math:'math',words:'words',readpic:'words',sofit:'sofit',letters:'letters',concept:'concepts',gender:'gender',sentence:'sentence',tense:'tense',scramble:'scramble',compare:'math',missing:'math',oddone:'concepts',opposite:'words',read:'reading',lettersnd:'letters',letterpair:'letters',blend:'reading',phon:'reading',sofitword:'sofit',fillletter:'reading',abcorder:'letters',lettersong:'letters',test:'reading'})[NODE.type]||'letters'; }
+function startNode(id){ const n=NODE_BY_ID[id]; if(!n) return; clearAdv(); NODE={id:id,type:n.type,ids:nodeResolveIds(n),last:null,taught:{},covered:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0}; if(n.type==='lettersong') return nodeLettersong(id); if(n.type==='test') return startUnitTest(n); nodeLearn(); }
+// ----- מבחן-עולם מעורב: שואב שאלות מכל צמתי-הלמידה של העולם, במגוון סוגים -----
+function startUnitTest(n){ const unit=n._unit;
+  const src=unit.nodes.filter(x=>x.id!==n.id && ['lettersong','phon','test'].indexOf(x.type)<0 && !x.bonus && !x.optional);
+  let pool=[]; src.forEach(sn=>{ const ids=nodeResolveIds(sn); ids.forEach(id=>pool.push({t:sn.type,id:id,ids:ids})); });
+  if(!pool.length){ return songComplete(n.id); }
+  const QN=Math.min(10,Math.max(6,Math.ceil(pool.length*1.2)));
+  let picks=[]; while(picks.length<QN){ picks=picks.concat(shuffle(pool.slice())); } picks=picks.slice(0,QN);
+  NODE={id:n.id,type:'test',ids:pool.map(e=>e.id),last:null,taught:{},covered:{},att:0,cont:null,tIds:picks,tIdx:0,tScore:0};
+  app.innerHTML=`<div class="screen">${nodeBar()}<div class="card"><div class="prompt" style="font-weight:bold">📝 ${H('מבחן קטן על כל מה שלמדנו!','A little test on everything!')}</div><div style="font-size:56px">📝</div><div class="speak-hint">${QN} ${H('שאלות מכל הסוגים','mixed questions')}</div><button class="replay" style="background:#f6c343;box-shadow:0 5px 0 #d6a01f;color:#6b4f00" onclick="nodeTestStep()">${t('l_start_test')}</button></div></div>`;
+}
 function nodeAllow(){ const u=NODE_BY_ID[NODE.id]&&NODE_BY_ID[NODE.id]._unit; const idx=u?PATH_UNITS.indexOf(u):0; return cumAllow(idx<0?0:idx); }
 function heClusters(s){ const out=[]; for(const ch of String(s||'')){ if(ch>='א'&&ch<='ת'){ out.push({base:ch,full:ch}); } else if(out.length){ out[out.length-1].full+=ch; } } return out; }
 const ABC_ORDER='אבגדהוזחטיכלמנסעפצקרשת';
@@ -2141,11 +2161,12 @@ function nodeAns(btn,ok,id,form){ stopAudio();
   if(ok){ chime(); if(btn) btn.classList.add("right"); flash(rnd(PRAISE_EMO)); nodeSpeakAnswer(id); adv(nodeLearn,1000); }
   else { buzz(); if(btn) btn.classList.add("wrong"); flash(rnd(NUDGE_EMO)); nodeSpeakAnswer(id); adv(nodeLearn,1600); }
 }
-function nodeToTest(){ const _core=isCoreReading(NODE_BY_ID[NODE.id]); const QN=_core?Math.min(10,Math.max(6,NODE.ids.length*2)):Math.min(18,Math.max(14,NODE.ids.length*2)); let pool=[]; while(pool.length<QN){ pool=pool.concat(shuffle(NODE.ids)); } NODE.tIds=pool.slice(0,QN); NODE.tIdx=0; NODE.tScore=0;
+function nodeToTest(){ const _node=NODE_BY_ID[NODE.id]||{}; const k=NODE.ids.length; const QN=_node.optional?Math.min(4,Math.max(2,k*2)):Math.min(8,Math.max(3,k*2)); let pool=[]; while(pool.length<QN){ pool=pool.concat(shuffle(NODE.ids)); } NODE.tIds=pool.slice(0,QN); NODE.tIdx=0; NODE.tScore=0;
   app.innerHTML=`<div class="screen">${nodeBar()}<div class="card"><div class="prompt" style="font-weight:bold">${t('lesson_test_intro')}</div><div style="font-size:56px">📝</div><button class="replay" style="background:#f6c343;box-shadow:0 5px 0 #d6a01f;color:#6b4f00" onclick="nodeTestStep()">${t('l_start_test')}</button></div></div>`;
 }
 function nodeTestStep(){ if(NODE.tIdx>=NODE.tIds.length) return nodeReward();
-  const id=NODE.tIds[NODE.tIdx];
+  let id=NODE.tIds[NODE.tIdx];
+  if(id&&typeof id==='object'){ NODE.type=id.t; NODE.ids=id.ids; id=id.id; } // מבחן-עולם מעורב: כל שאלה בסוג של הצומת שממנו הגיעה
   if(NODE.type==='scramble'){ return nodeScramble(id,()=>nodeTestAns(null,true,id,'scramble')); }
   app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="pathScreen()">${t('b_menu')}</button><div class="who">📝 ${NODE.tIdx+1}/${NODE.tIds.length} · ⭐ ${NODE.tScore}</div></div><div class="card">${buildQ(id,'nodeTestAns')}</div></div>`;
 }
@@ -2198,7 +2219,7 @@ function svgTree(x,y,s){ return `<g transform="translate(${x},${y}) scale(${s||1
 function svgStar(x,y){ return `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="1.6" fill="#fff" opacity="0.9"/>`; }
 function svgMoon(x,y){ return `<circle cx="${x}" cy="${y}" r="16" fill="#fdf3c0"/><circle cx="${x+7}" cy="${y-3}" r="14" fill="#2c2768"/>`; }
 function svgHill(yTop,color,W){ const t=Math.round(yTop); const w=W||384; return `<path d="M0 ${t+16} Q ${(w*0.28).toFixed(0)} ${t-8} ${(w*0.5).toFixed(0)} ${t+12} T ${w} ${t+8} L ${w} ${t+48} L 0 ${t+48} Z" fill="${color}" opacity="0.55"/>`; }
-function nodeFace(n){ const T=n.type; if(T==='lettersnd'){ const it=n.items; return it.length<=3?it.join(''):it[0]+'–'+it[it.length-1]; } if(T==='letterpair') return n.items.join('/'); if(T==='blend') return '🧩'; if(T==='phon') return '👂'; if(T==='read') return '📖'; if(T==='sofitword') return '🔚'; if(T==='fillletter') return '✏️'; if(T==='abcorder') return '🔡'; if(T==='lettersong') return '🎵'; if(T==='letters'||T==='sofit'){ const it=n.items; return it.length<=3?it.join(''):it[0]+'–'+it[it.length-1]; } if(T==='math'){ return n.items[0].indexOf('sub')===0?'−':'+'; } if(T==='readpic') return '📖'; if(T==='words') return '🖼️'; if(T==='scramble') return '🧩'; if(T==='gender') return '👫'; if(T==='sentence') return '📝'; if(T==='tense') return '⏳'; if(T==='concept') return '📍'; if(T==='compare') return '⚖️'; if(T==='missing') return '❓'; if(T==='oddone') return '🔍'; if(T==='opposite') return '↔️'; return '⭐'; }
+function nodeFace(n){ const T=n.type; if(T==='lettersnd'){ const it=n.items; return it.length<=3?it.join(''):it[0]+'–'+it[it.length-1]; } if(T==='letterpair') return n.items.join('/'); if(T==='blend') return '🧩'; if(T==='phon') return '👂'; if(T==='read') return '📖'; if(T==='sofitword') return '🔚'; if(T==='fillletter') return '✏️'; if(T==='abcorder') return '🔡'; if(T==='lettersong') return '🎵'; if(T==='test') return '📝'; if(T==='letters'||T==='sofit'){ const it=n.items; return it.length<=3?it.join(''):it[0]+'–'+it[it.length-1]; } if(T==='math'){ return n.items[0].indexOf('sub')===0?'−':'+'; } if(T==='readpic') return '📖'; if(T==='words') return '🖼️'; if(T==='scramble') return '🧩'; if(T==='gender') return '👫'; if(T==='sentence') return '📝'; if(T==='tense') return '⏳'; if(T==='concept') return '📍'; if(T==='compare') return '⚖️'; if(T==='missing') return '❓'; if(T==='oddone') return '🔍'; if(T==='opposite') return '↔️'; return '⭐'; }
 CONCEPTS.forEach((c,i)=>{ c.id=['inout','onunder','updown'][i]||('con'+i); });
 SENT.forEach((s,i)=>{ s.id='se'+i; }); TENSE.forEach((s,i)=>{ s.id='te'+i; });
 const NODE_TEACH={letters:1,sofit:1,words:1,readpic:1,math:1,read:1,lettersnd:1,letterpair:1,blend:1,sofitword:1};
