@@ -354,6 +354,9 @@ function load(){ try{ data = JSON.parse(localStorage.getItem(KEY)); }catch(e){ d
   Object.keys(data.profiles).forEach(id=>{ const p=data.profiles[id]; if(!p.level) p.level=2; if(!p.stats) p.stats={};
     if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={}; if(p.xp==null) p.xp=0; if(!p.streak) p.streak={count:0,last:null}; if(p.placementDone==null) p.placementDone=false; if(p.coins==null) p.coins=0; if(p.playEnd==null) p.playEnd=0;
     if(p.pathVersion!==PATH_VERSION){ p.path={progress:{},fails:{}}; p.unitsDone={}; p.placementDone=true; p.pathVersion=PATH_VERSION; }
+    // מיגרציה v2.1: צמתים שהוחלפו בתוכנית המקיפה — מעבירים התקדמות ישנה לחדשים
+    (function(pr){ if(!pr) return; const cp=(from,to)=>{ const s=pr[from]; if(s&&s.done) to.forEach(k=>{ if(!(pr[k]&&pr[k].done)) pr[k]={done:true,stars:s.stars||1,bestAcc:s.bestAcc||0.8,ts:s.ts||Date.now()}; }); };
+      cp('p0_first',['op_meet_sh']); cp('u1_sh',['op_meet_sh','op_find_sh','op_shlm']); })(p.path&&p.path.progress);
     if(!p.avatar) p.avatar={char:'kid',hat:'none',pet:'none',bg:'sky'}; if(p.avatar&&p.avatar.glasses==null) p.avatar.glasses='none'; if(p.avatar&&p.avatar.neck==null) p.avatar.neck='none'; if(!p.owned) p.owned={}; if(!p.worlds) p.worlds={}; if(!p.daily) p.daily={date:'',count:0,celebrated:false}; if(!p.unitsDone) p.unitsDone={}; }); }
 const COIN_MIN=5;
 let backTo=null, jumpFromId=null;

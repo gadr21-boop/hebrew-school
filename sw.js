@@ -1,5 +1,5 @@
 // Service worker — makes the game work offline after first load.
-const CACHE = 'hebrew-school-20260703091333';
+const CACHE = 'hebrew-school-20260703092411';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
