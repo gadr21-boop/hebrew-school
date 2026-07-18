@@ -354,6 +354,8 @@ function defaultData(){
   return { current:null, voiceURI:null, lang:"he", profiles:{} };
 }
 function load(){ try{ data = JSON.parse(localStorage.getItem(KEY)); }catch(e){ data=null; } if(!data||!data.profiles) data = defaultData(); lang = data.lang || "he";
+  // שחזור גיבוי מקומי של קוד ההורים (אם סנכרון דרס אותו)
+  if(!(data.parentPin&&data.parentPin.hash)){ try{ const bk=JSON.parse(localStorage.getItem('hebParentPin')||'null'); if(bk&&bk.hash&&(!data.parentPin||((bk.ts||0)>(data.parentPin.ts||0)))) data.parentPin=bk; }catch(e){} }
   Object.keys(data.profiles).forEach(id=>{ const p=data.profiles[id]; if(!p.level) p.level=2; if(!p.stats) p.stats={};
     if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={}; if(p.xp==null) p.xp=0; if(!p.streak) p.streak={count:0,last:null}; if(p.placementDone==null) p.placementDone=false; if(p.coins==null) p.coins=0; if(p.playEnd==null) p.playEnd=0;
     if(p.pathVersion==null||p.pathVersion<2){ p.path={progress:{},fails:{}}; p.unitsDone={}; p.placementDone=true; }
@@ -403,7 +405,7 @@ async function authRefresh(){ const a=getAuth(); if(!a||!a.refresh_token) return
 function authLogout(){ clearAuth(); authScreen('login'); }
 async function ensureToken(){ const a=getAuth(); if(!a) return null; if(a.expires_at && a.expires_at < Date.now()+30000){ await authRefresh(); } return getAuth(); }
 // ----- ענן מאומת (per-user, RLS על user_progress) -----
-async function cloudPullAuth(){ const a=await ensureToken(); if(!a||!a.access_token) return false; try{ const r=await fetch(SUPA_URL+'/rest/v1/user_progress?select=data,updated_at&limit=1',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+a.access_token}}); if(!r.ok) return false; const rows=await r.json(); const d=rows&&rows[0]&&rows[0].data; if(d&&d.profiles&&Object.keys(d.profiles).length>0&&((d._ts||0)>=(data._ts||0))){ data=d; try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch(e){} return true; } }catch(e){} return false; }
+async function cloudPullAuth(){ const a=await ensureToken(); if(!a||!a.access_token) return false; try{ const r=await fetch(SUPA_URL+'/rest/v1/user_progress?select=data,updated_at&limit=1',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+a.access_token}}); if(!r.ok) return false; const rows=await r.json(); const d=rows&&rows[0]&&rows[0].data; if(d&&d.profiles&&Object.keys(d.profiles).length>0&&((d._ts||0)>=(data._ts||0))){ const _localPin=data.parentPin; data=d; if(_localPin&&(!data.parentPin||((_localPin.ts||0)>(data.parentPin.ts||0)))){ data.parentPin=_localPin; } try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch(e){} return true; } }catch(e){} return false; }
 let _cloudT=null;
 function cloudPush(){ if(!getAuth()) return; clearTimeout(_cloudT); _cloudT=setTimeout(cloudPushAuth,1500); }
 async function cloudPushAuth(){ const a=await ensureToken(); if(!a||!a.access_token||!a.uid) return; try{ await fetch(SUPA_URL+'/rest/v1/user_progress?on_conflict=user_id',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+a.access_token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{user_id:a.uid,data:data,updated_at:new Date().toISOString()}])}); }catch(e){} }
@@ -901,10 +903,7 @@ function setEditLevel(L){ const p=data.profiles[editId]; p.level=L; p.levelManua
 function setEditAge(a){ const p=data.profiles[editId]; p.age=a; if(!p.levelManual){ p.level=Math.min(ageToLevel(a),AGE_CAP[a]||3); } if(!p.learnMin) p.learnMin=(a<=4?4:(a<=6?6:8)); renderEdit(); }
 function setEditLearn(M){ data.profiles[editId].learnMin=M; renderEdit(); }
 function saveProfile(){ const p=data.profiles[editId]; const el=document.getElementById("edname"); if(el){ const v=el.value.trim(); if(v) p.name=v; }
-  if(p._new){ delete p._new; data.current=editId; save(); FORM_BAGS={}; LAST_QKEY=null;
-    if(p.age && p.age>=5 && !p.placementDone){ return placementIntro(); } // גיל 5+ — מציעים מבחן מיקום
-    p.placementDone=true; save(); return pathScreen(); // גיל 3–4 או ללא גיל — ישר למסלול הקל
-  }
+  if(p._new){ delete p._new; data.current=editId; p.placementDone=true; save(); FORM_BAGS={}; LAST_QKEY=null; return pathScreen(); } // כולם מתחילים מההתחלה; הרמה מתאימה את עצמה תוך כדי
   save(); pickProfile(); }
 function deleteProfile(){ const p=data.profiles[editId]; if(confirm((lang==='en'?"Delete ":"למחוק את ")+p.name+"?")){ delete data.profiles[editId]; if(data.current===editId) data.current=null; save(); pickProfile(); } }
 function bootScreen(){ if(data.current&&data.profiles[data.current]){ migrateAudFlag(); home(); } else pickProfile(); }
@@ -975,8 +974,71 @@ function home(){
       </div>
     </div>`;
 }
+// ===== קוד הורים (PIN 4 ספרות, PBKDF2-SHA-256) — חלופה לתרגיל הכפל =====
+function pinCrypto(){ try{ return !!(window.crypto&&crypto.subtle&&crypto.getRandomValues); }catch(e){ return false; } }
+function hasPin(){ return !!(data.parentPin&&data.parentPin.hash); }
+function _b64(buf){ const a=new Uint8Array(buf); let s=''; for(let i=0;i<a.length;i++) s+=String.fromCharCode(a[i]); return btoa(s); }
+function _unb64(s){ const bin=atob(s); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return a; }
+async function pinDerive(pin,saltArr,iter){ const enc=new TextEncoder(); const key=await crypto.subtle.importKey('raw',enc.encode(String(pin)),{name:'PBKDF2'},false,['deriveBits']); const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:saltArr,iterations:iter,hash:'SHA-256'},key,256); return _b64(bits); }
+async function pinSet(pin){ const salt=crypto.getRandomValues(new Uint8Array(16)); const iter=200000; const hash=await pinDerive(pin,salt,iter); data.parentPin={hash:hash,salt:_b64(salt),iter:iter,ts:Date.now()}; save(); try{ localStorage.setItem('hebParentPin',JSON.stringify(data.parentPin)); }catch(e){} if(typeof cloudPush==='function') cloudPush(); }
+async function pinCheck(pin){ if(!hasPin()) return false; try{ const h=await pinDerive(pin,_unb64(data.parentPin.salt),data.parentPin.iter||200000); return h===data.parentPin.hash; }catch(e){ return false; } }
+function pinClear(){ if(data.parentPin){ delete data.parentPin; data.parentPin={cleared:true,ts:Date.now()}; save(); try{ localStorage.removeItem('hebParentPin'); }catch(e){} if(typeof cloudPush==='function') cloudPush(); } if(data.parentPin&&data.parentPin.cleared) delete data.parentPin.hash; }
+function pinLockedSec(){ const l=data.pinLock; if(l&&l.until&&Date.now()<l.until) return Math.ceil((l.until-Date.now())/1000); return 0; }
+function pinFail(){ const l=data.pinLock||(data.pinLock={fails:0,until:0}); l.fails=(l.fails||0)+1; if(l.fails>=5){ l.until=Date.now()+Math.min(300000,60000*Math.pow(2,l.fails-5)); } save(); }
+function pinReset(){ data.pinLock={fails:0,until:0}; save(); }
+let _pinBuf='';
+function pinGate(){ if(!_pgKeep){ _pgNext=null; _pgBack=null; } _pgKeep=false; _pinBuf=''; if(window.speechSynthesis) speechSynthesis.cancel();
+  const lk=pinLockedSec();
+  const dots=`<div id="pinDots" style="font-size:34px;letter-spacing:10px;min-height:44px;color:#6a5acd">${'•'.repeat(_pinBuf.length)}${'○'.repeat(4-_pinBuf.length)}</div>`;
+  const pad=[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(d=>d===''?'<div></div>':`<button class="tile" style="width:64px;height:56px;font-size:24px" onclick="${d==='⌫'?'pinDel()':'pinDigit('+d+')'}" ${lk?'disabled':''}>${d}</button>`).join('');
+  app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="pgBack()">${t('b_menu')}</button><div class="who">🔒 ${H('הורים','Parents')}</div></div>
+    <div class="card"><div class="prompt" style="font-weight:bold">🧑‍🤝‍🧑 ${H('קוד הורים','Parent code')}</div>
+    <div class="speak-hint" style="margin:2px 0 8px">${lk?('🔒 '+H('נעול ל-'+lk+' שניות','Locked for '+lk+'s')):H('הקלידו את קוד ההורים','Enter the parent code')}</div>
+    ${dots}
+    <div id="pinMsg" style="color:#d64545;font-weight:bold;min-height:18px;font-size:14px"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:230px;margin:10px auto">${pad}</div>
+    <button class="replay" style="margin-top:6px;background:#e8e8f0;box-shadow:0 4px 0 #c9c9d6;color:#555;font-size:14px" onclick="pinForgot()">${H('שכחתי את הקוד','Forgot code')}</button>
+    <button class="replay" style="margin-top:10px;background:#f2f2f8;box-shadow:0 4px 0 #d5d5e0;color:#666;font-size:13px" onclick="pgBack()">↩ ${H('חזרה למשחק','Back to game')}</button>
+    </div></div>`;
+  if(lk) setTimeout(()=>{ if(pinLockedSec()) pinGate(); else { const m=document.getElementById('pinMsg'); if(m) m.textContent=''; pinGate(); } }, 1000);
+}
+function pinRenderDots(){ const el=document.getElementById('pinDots'); if(el) el.innerHTML='•'.repeat(_pinBuf.length)+'○'.repeat(4-_pinBuf.length); }
+function pinDigit(d){ if(pinLockedSec())return; if(_pinBuf.length>=4)return; _pinBuf+=String(d); pinRenderDots(); if(_pinBuf.length>=4) setTimeout(pinTry,150); }
+function pinDel(){ if(pinLockedSec())return; _pinBuf=_pinBuf.slice(0,-1); pinRenderDots(); }
+function pinTry(){ const pin=_pinBuf; _pinBuf=''; pinCheck(pin).then(ok=>{ if(ok){ pinReset(); chime(); _parentUntil=Date.now()+PG_TTL; const n=_pgNext; _pgNext=null; _pgBack=null; (n||parentArea)(); } else { buzz(); pinFail(); const m=document.getElementById('pinMsg'); const lk=pinLockedSec(); if(m) m.textContent=lk?(H('יותר מדי ניסיונות — נעול','Too many tries — locked')):(H('קוד שגוי','Wrong code')); pinRenderDots(); if(lk) pinGate(); } }); }
+function pinForgot(){ const a=getAuth();
+  if(!(a&&a.email)){ // אין חשבון — נופלים לתרגיל הכפל
+    app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="pinGate()">${t('b_menu')}</button><div class="who">🔒</div></div><div class="card"><div class="prompt">${H('אין חשבון מקושר','No linked account')}</div><div class="speak-hint" style="margin:8px 0 12px">${H('אפשר להיכנס עם תרגיל במקום','Use the math puzzle instead')}</div><button class="replay" onclick="parentGateMath()">${H('לתרגיל ▶','Puzzle ▶')}</button></div></div>`; return; }
+  app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="pinGate()">${t('b_menu')}</button><div class="who">🔒</div></div>
+    <div class="card"><div class="prompt" style="font-weight:bold">${H('איפוס קוד','Reset code')}</div>
+    <div class="speak-hint" style="margin:6px 0 10px">${H('הזינו את סיסמת החשבון של','Enter the account password for')} <b>${a.email}</b></div>
+    <input id="pinPw" type="password" autocomplete="current-password" style="font-size:20px;padding:10px 14px;border-radius:14px;border:2px solid #cdb4ff;width:80%;text-align:center;font-family:inherit">
+    <div id="pinPwMsg" style="color:#d64545;font-weight:bold;min-height:18px;font-size:14px;margin-top:8px"></div>
+    <button class="replay" style="background:#a06cd5;box-shadow:0 4px 0 #7d4eb0;color:#fff" onclick="pinForgotTry()">${H('אמת ואפס','Verify & reset')} ▶</button></div></div>`;
+}
+function pinForgotTry(){ const el=document.getElementById('pinPw'); const pw=el?el.value:''; const a=getAuth(); const m=document.getElementById('pinPwMsg'); if(!pw){ if(m) m.textContent=H('הזינו סיסמה','Enter password'); return; } if(m) m.textContent=H('בודק…','Checking…');
+  authLogin(a.email,pw).then(r=>{ if(r.ok){ pinReset(); pinClear(); chime(); _parentUntil=Date.now()+PG_TTL; pinSetup(true); } else { buzz(); if(m) m.textContent=H('סיסמה שגויה','Wrong password'); } }).catch(()=>{ if(m) m.textContent=H('אין חיבור לאינטרנט','No connection'); }); }
+function pinSetup(fromReset){ backTo=parentArea; _pinBuf=''; if(window.speechSynthesis) speechSynthesis.cancel();
+  app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="parentArea()">${t('b_menu')}</button><div class="who">🔒 ${H('קוד הורים','Parent code')}</div></div>
+    <div class="card"><div class="prompt" style="font-weight:bold">🔐 ${fromReset?H('קוד חדש','New code'):H('קביעת קוד הורים','Set parent code')}</div>
+    <div class="speak-hint" style="margin:6px 0 10px">${H('בחרו קוד בן 4 ספרות','Choose a 4-digit code')}</div>
+    <input id="pinA" type="tel" inputmode="numeric" maxlength="4" placeholder="●●●●" style="font-size:26px;letter-spacing:10px;padding:10px;border-radius:14px;border:2px solid #cdb4ff;width:150px;text-align:center;font-family:inherit"><br>
+    <div class="speak-hint" style="margin:10px 0 4px">${H('שוב, לוודא','Again to confirm')}</div>
+    <input id="pinB" type="tel" inputmode="numeric" maxlength="4" placeholder="●●●●" style="font-size:26px;letter-spacing:10px;padding:10px;border-radius:14px;border:2px solid #cdb4ff;width:150px;text-align:center;font-family:inherit"><br>
+    <div id="pinSetMsg" style="color:#d64545;font-weight:bold;min-height:18px;font-size:14px;margin-top:8px"></div>
+    <button class="replay" style="background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff;margin-top:6px" onclick="pinSetupSave()">${t('p_save')}</button>
+    ${hasPin()?`<br><button class="replay" style="margin-top:10px;background:#ffb3b3;box-shadow:0 4px 0 #e08585;color:#7a1f1f;font-size:13px" onclick="pinRemove()">${H('הסר קוד','Remove code')}</button>`:''}
+    </div></div>`;
+}
+function pinSetupSave(){ const a=(document.getElementById('pinA')||{}).value||''; const b=(document.getElementById('pinB')||{}).value||''; const m=document.getElementById('pinSetMsg');
+  if(!/^\d{4}$/.test(a)){ if(m) m.textContent=H('קוד חייב להיות 4 ספרות','Code must be 4 digits'); return; }
+  if(a!==b){ if(m) m.textContent=H('הקודים לא תואמים','Codes do not match'); return; }
+  pinSet(a).then(()=>{ chime(); flash('🔐'); parentArea(); });
+}
+function pinRemove(){ pinClear(); buzz(); parentArea(); }
 let _pgAns=0;
-function parentGate(){ if(!_pgKeep){ _pgNext=null; _pgBack=null; } _pgKeep=false;
+function parentGate(){ if(hasPin()&&pinCrypto()){ return pinGate(); } return parentGateMath(); }
+function parentGateMath(){ if(!_pgKeep){ _pgNext=null; _pgBack=null; } _pgKeep=false;
   if(window.speechSynthesis) speechSynthesis.cancel(); const a=12+Math.floor(Math.random()*8), b=13+Math.floor(Math.random()*7); _pgAns=a*b;
   app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="pgBack()">${t('b_menu')}</button><div class="who">🔒 ${H('הורים','Parents')}</div></div>
     <div class="card"><div class="prompt" style="font-weight:bold">🧑‍🤝‍🧑 ${H('קראו לאמא או לאבא','Go get Mom or Dad')}</div>
@@ -999,9 +1061,9 @@ function parentArea(){ backTo=home; if(window.speechSynthesis) speechSynthesis.c
       <button class="menu-btn" style="grid-column:1/-1;background:#cdb4ff;color:#3a2a5a" onclick="results()"><span class="emoji">📊</span>${t('h_results')}</button>
       <button class="menu-btn" style="grid-column:1/-1;background:#ff8fb0;color:#fff" onclick="recordStudio()"><span class="emoji">🎙️</span>${t('h_record')}</button>
       <button class="menu-btn" style="grid-column:1/-1;background:linear-gradient(135deg,#11998e,#38ef7d)" onclick="accountScreen()"><span class="emoji">👤</span>${H('החשבון שלי','My account')}${getAuth()?' ✅':''}</button>
+      ${pinCrypto()?`<button class="menu-btn" style="grid-column:1/-1;background:linear-gradient(135deg,#8e5aa8,#6a4380);color:#fff" onclick="pinSetup(false)"><span class="emoji">🔐</span>${hasPin()?H('שינוי קוד הורים','Change parent code'):H('קביעת קוד הורים','Set parent code')}</button>`:''}
     </div>
     <button class="replay" style="margin-top:14px" onclick="voiceSettings()">${t('h_voice')}</button>
-    <button class="replay" style="margin-top:12px" onclick="placementIntro()">${H('מבחן רמה','Level test')}</button>
     <button class="replay" style="margin-top:12px" onclick="switchChild()">${t('h_switch')}</button>
     <div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">${levelToggle()} ${langToggle()}</div>
   </div>`; }
