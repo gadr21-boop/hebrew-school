@@ -417,7 +417,7 @@ function imgFallback(el,key){ try{ el.insertAdjacentHTML('afterend', artSVG(key)
 // ================= שמירת נתונים =================
 const KEY = "betSeferIvrit_v1";
 const PATH_VERSION=4;
-const BUILD_VER='20260908113839'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
+const BUILD_VER='20260908114746'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
 let data = null;
 function defaultData(){
   return { current:null, voiceURI:null, lang:"he", profiles:{} };
@@ -489,12 +489,17 @@ async function cloudPull(force){ return cloudPullAuth(); }
 // ----- זרימת כניסה -----
 function appBusy(m){ if(typeof app==='undefined'||!app) return; app.innerHTML=`<div class="screen"><div class="card" style="margin:14vh auto;max-width:340px"><div style="font-size:40px">⏳</div><div class="prompt">${m||H('טוען…','Loading…')}</div></div></div>`; }
 async function afterLogin(){ _parentUntil=Date.now()+PG_TTL; appBusy(H('טוען את ההתקדמות…','Loading progress…')); let pulled=false; try{ pulled=await cloudPullAuth(); }catch(e){} if(!pulled && Object.keys(data.profiles||{}).length>0){ try{ await cloudPushAuth(); }catch(e){} } load(); appRoute(); }
+// הסנכרון רץ ברקע אחרי הטעינה. אם הוא מרנדר מחדש אחרי שהילד כבר ניווט — הוא זורק אותו החוצה באמצע משחק
+let _userActed=false;
+try{ ['pointerdown','click','touchstart'].forEach(function(t){ window.addEventListener(t,function(){ _userActed=true; },{capture:true,once:true}); });
+     window.addEventListener('keydown',function(){ _userActed=true; },{capture:true,once:true}); }catch(e){}
 async function authBoot(){
   try{ const h=(typeof location!=='undefined'&&location.hash)||''; if(h.indexOf('access_token=')>=0){ const p=new URLSearchParams(h.replace(/^#/,'')); const at=p.get('access_token'); if(at){ storeSession({access_token:at,refresh_token:p.get('refresh_token'),expires_in:+(p.get('expires_in')||3600),user:{id:jwtSub(at)}}); try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} await afterLogin(); return; } } }catch(e){}
   const a=getAuth();
   if(!a){ authScreen('login'); return; }
   appRoute(); // יש כבר חשבון במכשיר — נכנסים מיד עם הנתונים המקומיים
-  (async()=>{ try{ const ok=await cloudPullAuth(); if(ok) appRoute(); }catch(e){} })();
+  (async()=>{ try{ const ok=await cloudPullAuth();
+    if(ok && !_userActed && !curGame) appRoute(); }catch(e){} })();
 }
 // ----- מסכי כניסה/הרשמה -----
 const _AUI='font-size:18px;padding:11px 14px;border-radius:14px;border:2px solid #cdb4ff;width:100%;box-sizing:border-box;margin-bottom:10px;font-family:inherit;direction:ltr;text-align:left';
@@ -3929,8 +3934,9 @@ function tdProg(){ const p=prof(); if(!p) return {best:1,stars:{}}; p.td=p.td||{
   if(!p.td.stars) p.td.stars={}; return p.td; }
 
 // ---------- מסך בחירת שלב ----------
-function castleGame(){ stopArcade(); arcScore=0; tdMenu(); }
-function tdMenu(){ stopArcade(); curGame=null; TD=null; const P=tdProg();
+let TD_BACK=null;
+function castleGame(){ stopArcade(); arcScore=0; TD_BACK=backTo||playground; tdMenu(); }
+function tdMenu(){ stopArcade(); curGame=null; TD=null; backTo=TD_BACK||playground; const P=tdProg();
   const done=Object.keys(P.stars).length, tot=Object.keys(P.stars).reduce((a,k)=>a+P.stars[k],0);
   app.innerHTML=`<div class="screen">${topbar()}
     <h1 style="font-size:clamp(21px,5.4vw,32px);margin-bottom:2px">🏰 ${H('הגנת הטירה','Castle Defense')}</h1>
@@ -3956,6 +3962,7 @@ function tdStart(n){ stopArcade(); curGame='castle'; arcScore=0;
   if(!cv) return; cv.style.touchAction='none';
   cv.onpointerdown=function(e){ e.preventDefault(); const p=ngPos(cv,e);
     tdTap(Math.floor(p.x/TD.cell),Math.floor((p.y-TD.oy)/TD.cell)); };
+  backTo=tdMenu;   // כפתור החזרה מהמשחק חוזר לבחירת שלב, לא עד המגרש
   tdPanel(); ngEvery(33,tdStep); tdDraw(); }
 
 // ---------- ממשק ----------
@@ -4983,7 +4990,7 @@ load();
 loadVoices();
 loadRecordings();
 if(window.speechSynthesis){ speechSynthesis.onvoiceschanged=()=>loadVoices(); }
-function appRoute(){ bootScreen(); }
+function appRoute(){ if(typeof stopArcade==='function') stopArcade(); bootScreen(); }
 authBoot();
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){
   var hadCtrl=!!navigator.serviceWorker.controller, reloaded=false;
