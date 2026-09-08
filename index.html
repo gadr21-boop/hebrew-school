@@ -222,10 +222,11 @@
   .m3c.m3fall { animation:m3fall .22s ease-out; }
   @keyframes m3pop { to { transform:scale(.1) rotate(150deg); opacity:0 } }
   @keyframes m3fall { from { transform:translateY(-18px); opacity:.35 } }
-  .tdpick { display:flex; gap:10px; justify-content:center; margin-bottom:6px; }
-  .tdbtn { display:flex; flex-direction:column; align-items:center; gap:1px; border:none; border-radius:16px; padding:6px 15px; background:#fff; color:#4a4a68; font-family:inherit; font-weight:bold; font-size:12px; cursor:pointer; box-shadow:0 4px 0 #cfd6e6; }
+  .tdpick { display:flex; gap:5px; justify-content:center; margin-bottom:6px; }
+  .tdbtn { display:flex; flex-direction:column; align-items:center; gap:1px; border:none; border-radius:15px; padding:6px 0; width:50px; background:#fff; color:#4a4a68; font-family:inherit; font-weight:bold; font-size:12px; cursor:pointer; box-shadow:0 4px 0 #cfd6e6; }
   .tdbtn.on { background:#ffe9a8; box-shadow:0 4px 0 #e0b93f, 0 0 0 3px #ffc531 inset; }
-  .tdbtn .te { font-size:24px; }
+  .tdbtn .te { font-size:23px; }
+  .tdbtn .tc { font-size:11px; }
   .tdbtn:active { transform:translateY(2px); }
   .tggrid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; width:min(86vw,340px); background:#bbada0; padding:8px; border-radius:14px; direction:ltr; touch-action:none; }
   .tgc { aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:8px; font-weight:bold; }
@@ -247,6 +248,36 @@
   .pzact { border:none; border-radius:16px; padding:11px 22px; color:#fff; font-family:inherit; font-weight:bold; font-size:clamp(15px,4.2vw,19px); cursor:pointer; box-shadow:0 5px 0 rgba(0,0,0,.2); }
   .pzact:active { transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.2); }
   .pzact[disabled] { opacity:.7; }
+  /* ---- 🏰 הגנת הטירה: בחירת שלב, חנות תותחים, פאנל שדרוג ---- */
+  .tdlv { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:min(94vw,430px); margin:0 auto; }
+  .tdlvb { border:none; border-radius:18px; padding:10px 6px; cursor:pointer; font-family:inherit; display:flex; flex-direction:column; align-items:center; gap:2px; background:linear-gradient(160deg,#e8f3ff,#cfe0f5); color:#3a3a55; box-shadow:0 5px 0 rgba(0,0,0,.14); }
+  .tdlvb .n { font-size:clamp(18px,4.8vw,25px); font-weight:bold; line-height:1.1; }
+  .tdlvb .t { font-size:11px; opacity:.78; }
+  .tdlvb .s { font-size:12px; letter-spacing:1px; color:#c78a00; direction:ltr; }
+  .ltr { direction:ltr; display:inline-block; }
+  .tdlvb.lock { filter:grayscale(.9); opacity:.5; box-shadow:0 5px 0 #d5d5df; cursor:default; }
+  .tdlvb.cur { box-shadow:0 5px 0 rgba(0,0,0,.14), 0 0 0 3px #ffc531; }
+  .tdlvb:not(.lock):active { transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.14); }
+  .tdbar { display:flex; gap:8px; justify-content:center; margin-bottom:6px; }
+  .tdbar button { border:none; border-radius:14px; padding:7px 16px; font-family:inherit; font-weight:bold; font-size:14px; cursor:pointer; background:#fff; color:#3a3a55; box-shadow:0 4px 0 #cfd6e6; }
+  .tdbar button:active { transform:translateY(2px); box-shadow:0 2px 0 #cfd6e6; }
+  .tdgo { background:#8bd17c!important; color:#1e4a20!important; box-shadow:0 4px 0 #5da851!important; }
+  .tdspd.on { background:#ffd76a!important; box-shadow:0 4px 0 #d6a91f!important; }
+  .tdbtn.poor { opacity:.45; }
+  .tdbtn.lk { opacity:.4; filter:grayscale(1); }
+  .tdbtn.lk .tc { font-size:10px; }
+  .tdinfo { background:#fff; border-radius:18px; padding:8px 12px; width:min(94vw,340px); margin:0 auto; box-shadow:0 4px 14px rgba(0,0,0,.14); }
+  .ti-head { display:flex; align-items:center; gap:8px; justify-content:center; font-size:13px; color:#3a3a55; }
+  .ti-e { font-size:26px; }
+  .ti-pip { color:#ffc531; letter-spacing:2px; font-size:12px; direction:ltr; display:inline-block; }
+  .ti-st { font-size:13px; color:#5a5a78; margin:3px 0 7px; }
+  .ti-btns { display:flex; gap:6px; justify-content:center; }
+  .tdact { border:none; border-radius:13px; padding:8px 12px; font-family:inherit; font-weight:bold; font-size:13px; cursor:pointer; color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.2); }
+  .tdact.up { background:#5b8def; }
+  .tdact.sell { background:#f0a63d; }
+  .tdact.x { background:#b9b9c6; }
+  .tdact.off { opacity:.45; }
+  .tdact:active { transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.2); }
 </style>
 </head>
 <body>
@@ -383,7 +414,7 @@ function imgFallback(el,key){ try{ el.insertAdjacentHTML('afterend', artSVG(key)
 // ================= שמירת נתונים =================
 const KEY = "betSeferIvrit_v1";
 const PATH_VERSION=4;
-const BUILD_VER='20260908170651'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
+const BUILD_VER='20260908110302'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
 let data = null;
 function defaultData(){
   return { current:null, voiceURI:null, lang:"he", profiles:{} };
@@ -3817,105 +3848,333 @@ function m3Won(){ const M=M3; if(!M) return; const nx=M.lvl+1;
     <button class="replay" style="background:#ff7ab8;box-shadow:0 5px 0 #d6538f;color:#fff" onclick="m3Level(${nx})">${H('שלב','Level')} ${nx} ▶</button><br>
     <button class="replay" style="margin-top:12px" onclick="arcBack()">${t('b_menu')}</button></div></div>`; }
 
-// ============ 🏰 הגנת הטירה — Tower Defense עם גלים, זהב ושלושה מגנים ============
+// ============ 🏰 הגנת הטירה — קמפיין: 15 מפות, 6 תותחים, שדרוג מגדלים ל-4 רמות ============
 let TD=null;
-const TD_T={arch:{e:'🏹',cost:20,rng:96,dmg:1,rate:24},
-            ice:{e:'❄️',cost:30,rng:86,dmg:0,rate:0},
-            bomb:{e:'💣',cost:45,rng:108,dmg:2.4,rate:58,splash:48}};
-const TD_FOE=['👾','🐛','👻','🦠','🤖','🐊'];
-function tdPath(){ const p=[];
-  for(let x=0;x<=7;x++) p.push([x,1]);
-  for(let y=2;y<=4;y++) p.push([7,y]);
-  for(let x=6;x>=1;x--) p.push([x,4]);
-  for(let y=5;y<=7;y++) p.push([1,y]);
-  for(let x=2;x<=7;x++) p.push([x,7]);
-  for(let y=8;y<=10;y++) p.push([7,y]);
-  p.push([8,10]); return p; }
+// כל מגדל: מחיר, טווח, נזק, קצב (פריימים בין יריות), ומאיזה שלב הוא נפתח
+const TD_T={
+  arch:{e:'🏹',nm:['קשת','Archer'],    cost:20,rng:96, dmg:1.0, rate:20,unlock:1,col:'#7ac74f'},
+  ice: {e:'❄️',nm:['קרח','Frost'],     cost:30,rng:88, dmg:0.22,rate:10,unlock:1,col:'#4dc8ff',aura:1,slow:1},
+  bomb:{e:'💣',nm:['פצצה','Bomb'],     cost:45,rng:108,dmg:2.4, rate:58,unlock:2,col:'#ff8a5b',splash:48},
+  zap: {e:'⚡',nm:['ברק','Lightning'], cost:60,rng:94, dmg:1.7, rate:30,unlock:4,col:'#ffc93c',chain:3},
+  fire:{e:'🔥',nm:['אש','Flame'],      cost:55,rng:76, dmg:0.55,rate:14,unlock:6,col:'#ff5a3d',aura:1,burn:1},
+  snip:{e:'🎯',nm:['צלף','Sniper'],    cost:85,rng:205,dmg:6.5, rate:92,unlock:8,col:'#b07bff',pierce:1}
+};
+const TD_MAXLV=4;
+function tdStat(k,lv){ const b=TD_T[k];
+  return {dmg:b.dmg*(1+0.75*(lv-1)), rng:b.rng+13*(lv-1), rate:Math.max(6,Math.round(b.rate*(1-0.14*(lv-1))))}; }
+function tdUpCost(k,lv){ return Math.round(TD_T[k].cost*(0.9+0.75*lv)); }
+function tdSellVal(w){ let paid=TD_T[w.k].cost; for(let l=1;l<w.lv;l++) paid+=tdUpCost(w.k,l); return Math.round(paid*0.6); }
+
+// ערכות נוף — כל מפה בוחרת אחת
+const TD_TH=[
+  {bg:'#dff3c8',g1:'#cdebb0',g2:'#d8f2bf',rd:'#e0bd83',rd2:'#efd6a8',dec:['🌳','🌲','🌷'],dark:0},
+  {bg:'#f6edd2',g1:'#efe0b4',g2:'#f6ebc9',rd:'#d3a862',rd2:'#e8c78f',dec:['🌵','🪨','🐫'],dark:0},
+  {bg:'#e6f4fb',g1:'#d6eaf5',g2:'#eaf7fd',rd:'#adc6d6',rd2:'#cfe1ec',dec:['⛄','🌲','🧊'],dark:0},
+  {bg:'#2e2233',g1:'#3d2c41',g2:'#48344c',rd:'#8a4534',rd2:'#b35c3d',dec:['🌋','🪨','🔥'],dark:1},
+  {bg:'#232b47',g1:'#2c3556',g2:'#354065',rd:'#5a6796',rd2:'#7280ad',dec:['🌙','⭐','🦇'],dark:1}
+];
+// מפות: התחלה + מקטעים (R/L/U/D + אורך) על רשת 9×11. th=נוף, w=מספר גלים
+const TD_MAPS=[
+  {nm:['הכרם','Vineyard'],      s:[0,1], g:'R7 D3 L6 D3 R6 D3 R1',                th:0,w:8, gold:95, lives:12,bl:4},
+  {nm:['שביל היער','Forest'],   s:[1,0], g:'D9 R6 U8 R1',                          th:0,w:9, gold:100,lives:12,bl:5},
+  {nm:['הזיגזג','Zigzag'],      s:[0,0], g:'D2 R7 D3 L7 D3 R7 D2',                 th:0,w:10,gold:105,lives:11,bl:5},
+  {nm:['הצומת','Crossroad'],    s:[4,0], g:'D3 L4 D4 R8 D3',                       th:1,w:10,gold:110,lives:11,bl:6},
+  {nm:['הקיצור','Shortcut'],    s:[0,5], g:'R4 U4 R4 D9',                          th:1,w:11,gold:120,lives:10,bl:6},
+  {nm:['הפרסה','Horseshoe'],    s:[0,2], g:'R6 D6 L6 D2 R8',                       th:1,w:11,gold:120,lives:10,bl:6},
+  {nm:['המניפה','The Fan'],     s:[8,0], g:'L8 D4 R7 D4 L7 D2 R8',                 th:2,w:12,gold:125,lives:10,bl:7},
+  {nm:['הקרחון','Glacier'],     s:[4,0], g:'D2 L4 D6 R8 U4 L3',                    th:2,w:12,gold:130,lives:9, bl:7},
+  {nm:['המבוך','The Maze'],     s:[0,0], g:'D3 R3 D3 L3 D4 R8 U6'  ,              th:2,w:13,gold:135,lives:9, bl:6},
+  {nm:['הספירלה','Spiral'],     s:[0,0], g:'R8 D5 L6 D5 R4 U3'          ,          th:3,w:13,gold:140,lives:9, bl:5},
+  {nm:['הלבה','Lava Run'],      s:[8,1], g:'L7 D2 R6 D2 L6 D2 R6 D3 L2',           th:3,w:14,gold:145,lives:8, bl:7},
+  {nm:['הלוע','The Crater'],    s:[0,10],g:'U9 R8 D5 L5 D4 R4',                     th:3,w:14,gold:150,lives:8, bl:7},
+  {nm:['הצללים','Shadows'],     s:[2,0], g:'D4 L2 D5 R7 U7 R1 D8',                  th:4,w:15,gold:155,lives:8, bl:6},
+  {nm:['ליל הירח','Moon Night'],s:[0,0], g:'R8 D3 L7 D3 R7 D3 L7 D1',              th:4,w:16,gold:165,lives:9, bl:7},
+  {nm:['שער הטירה','Castle Gate'],s:[4,0],g:'D2 R4 D3 L8 D3 R8 D2 L4',             th:4,w:18,gold:175,lives:7, bl:8}
+];
+function tdPathOf(m){ const p=[m.s.slice()]; let x=m.s[0],y=m.s[1];
+  m.g.split(' ').forEach(function(seg){ const d=seg[0], n=parseInt(seg.slice(1),10)||0;
+    const dx=(d==='R')?1:(d==='L')?-1:0, dy=(d==='D')?1:(d==='U')?-1:0;
+    for(let i=0;i<n;i++){ x+=dx; y+=dy; p.push([x,y]); } });
+  return p; }
+function tdRng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0;
+  let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t;
+  return ((t^t>>>14)>>>0)/4294967296; }; }
+// מכשולים — משבצות שאי אפשר לבנות עליהן; קבועות לכל מפה (seed לפי מספר המפה)
+function tdBlocks(mi,path){ const m=TD_MAPS[mi], ps=new Set(path.map(p=>p[0]+','+p[1])), out=[], R=tdRng(mi*7919+13);
+  let guard=0;
+  while(out.length<m.bl && guard++<400){ const x=Math.floor(R()*9), y=Math.floor(R()*11), k=x+','+y;
+    if(ps.has(k)||out.indexOf(k)>=0) continue;
+    if(Math.abs(x-path[0][0])+Math.abs(y-path[0][1])<2) continue;
+    out.push(k); }
+  return new Set(out); }
+
+// --- סוגי אויבים ---
+const TD_K={
+  walk:{e:['👾','🐛','👻','🦠','🤖','🐊'],spd:1.00,hp:1.0,arm:0,   r:13,gold:1.0},
+  fast:{e:['🐇','🦎','🐆'],               spd:1.95,hp:0.5,arm:0,   r:12,gold:1.2},
+  tank:{e:['🐢','🦏','🛡️'],              spd:0.55,hp:2.0,arm:0.25,r:16,gold:1.8},
+  boss:{e:['👹','🐲','👺'],               spd:0.72,hp:4.0,arm:0.12,r:20,gold:6.0}
+};
+function tdProg(){ const p=prof(); if(!p) return {best:1,stars:{}}; p.td=p.td||{best:1,stars:{}};
+  if(!p.td.stars) p.td.stars={}; return p.td; }
+
+// ---------- מסך בחירת שלב ----------
+function castleGame(){ stopArcade(); arcScore=0; tdMenu(); }
+function tdMenu(){ stopArcade(); curGame=null; TD=null; const P=tdProg();
+  const done=Object.keys(P.stars).length, tot=Object.keys(P.stars).reduce((a,k)=>a+P.stars[k],0);
+  app.innerHTML=`<div class="screen">${topbar()}
+    <h1 style="font-size:clamp(21px,5.4vw,32px);margin-bottom:2px">🏰 ${H('הגנת הטירה','Castle Defense')}</h1>
+    <div class="subtitle" style="margin-bottom:10px">${H('בנו מגדלים, שדרגו אותם, ועצרו את המפלצות','Build towers, upgrade them, stop the monsters')}</div>
+    <div class="ngbar" style="margin:0 auto 14px;display:inline-flex">⭐ <span class="ltr"><b>${tot}</b>/${TD_MAPS.length*3}</span> &nbsp;·&nbsp; ${H('שלבים','Levels')} <span class="ltr"><b>${done}</b>/${TD_MAPS.length}</span></div>
+    <div class="tdlv">${TD_MAPS.map(function(m,i){ const n=i+1, open=n<=P.best, st=P.stars[n]||0;
+      return `<button class="tdlvb${open?'':' lock'}${(open&&n===P.best)?' cur':''}" ${open?`onclick="tdStart(${n})"`:'disabled'} style="background:linear-gradient(160deg,${TD_TH[m.th].g2},${TD_TH[m.th].rd2})">
+        <span class="n">${n}</span>
+        <span class="t">${H(m.nm[0],m.nm[1])}</span>
+        <span class="s">${open?(st?('⭐'.repeat(st)+'☆'.repeat(3-st)):'· · ·'):'🔒'}</span></button>`; }).join('')}</div>
+    <button class="replay" style="margin-top:16px" onclick="arcBack()">${t('b_menu')}</button></div>`; }
+
+// ---------- התחלת שלב ----------
+function tdStart(n){ stopArcade(); curGame='castle'; arcScore=0;
+  const mi=Math.max(0,Math.min(TD_MAPS.length-1,n-1)), m=TD_MAPS[mi], path=tdPathOf(m);
+  TD={mi:mi,lvl:n,cell:40,cols:9,rows:11,oy:34,path:path,ps:new Set(path.map(p=>p[0]+','+p[1])),
+      blocks:tdBlocks(mi,path),th:TD_TH[m.th],
+      towers:[],foes:[],shots:[],blast:[],bolts:[],nums:[],queue:[],
+      gold:m.gold,lives:m.lives,maxLives:m.lives,wave:0,waves:m.w,gap:0,rest:150,
+      sel:'arch',selT:null,speed:1,msg:'',msgT:0,go:false,won:false};
+  const cv=gameCanvas('🏰 '+H(m.nm[0],m.nm[1]),360,474,
+    `<div id="tdpanel"></div><div class="speak-hint" id="tdhint" style="margin-top:4px">${H('בחרו תותח ולחצו על משבצת ריקה','Pick a cannon, tap an empty tile')}</div>`);
+  if(!cv) return; cv.style.touchAction='none';
+  cv.onpointerdown=function(e){ e.preventDefault(); const p=ngPos(cv,e);
+    tdTap(Math.floor(p.x/TD.cell),Math.floor((p.y-TD.oy)/TD.cell)); };
+  tdPanel(); ngEvery(33,tdStep); tdDraw(); }
+
+// ---------- ממשק ----------
+function tdUnlocked(k){ return TD && TD.lvl>=TD_T[k].unlock; }
+function tdPanel(){ const T=TD; if(!T) return; const el=document.getElementById('tdpanel'); if(!el) return;
+  const w=T.selT;
+  if(w){ const b=TD_T[w.k], s=tdStat(w.k,w.lv), max=w.lv>=TD_MAXLV, up=tdUpCost(w.k,w.lv), can=T.gold>=up;
+    el.innerHTML=`<div class="tdinfo">
+      <div class="ti-head"><span class="ti-e">${b.e}</span>
+        <span><b>${H(b.nm[0],b.nm[1])}</b><br><span class="ti-pip">${'●'.repeat(w.lv)}${'○'.repeat(TD_MAXLV-w.lv)}</span></span></div>
+      <div class="ti-st">⚔️ ${s.dmg.toFixed(1)} &nbsp; 📏 ${Math.round(s.rng)}</div>
+      <div class="ti-btns">
+        <button class="tdact up${(max||!can)?' off':''}" onclick="tdUpgrade()">${max?('★ '+H('מקסימום','MAX')):('⬆️ 🪙'+up)}</button>
+        <button class="tdact sell" onclick="tdSell()">💰 ${tdSellVal(w)}</button>
+        <button class="tdact x" onclick="tdDeselect()">✖️</button>
+      </div></div>`; return; }
+  const keys=Object.keys(TD_T);
+  el.innerHTML=`<div class="tdbar">
+      <button class="tdgo" onclick="tdSendNow()">${T.wave>=T.waves&&!T.foes.length?'—':'▶ '+H('שלח גל','Send wave')}</button>
+      <button class="tdspd${T.speed>1?' on':''}" onclick="tdSpeed()">⏩ x${T.speed}</button>
+    </div>
+    <div class="tdpick">${keys.map(function(k){ const d=TD_T[k], lk=!tdUnlocked(k);
+      return `<button id="tdb_${k}" class="tdbtn${(k===T.sel&&!lk)?' on':''}${lk?' lk':(T.gold<d.cost?' poor':'')}" onclick="${lk?("tdLocked('"+k+"')"):("tdPick('"+k+"')")}">
+        <span class="te">${d.e}</span><span class="tc">${lk?('🔒'+d.unlock):('🪙'+d.cost)}</span></button>`; }).join('')}</div>`; }
+function tdLocked(k){ buzz(); tdSay(H('נפתח בשלב ','Unlocks at level ')+TD_T[k].unlock+' '+TD_T[k].e); }
+function tdPick(k){ const T=TD; if(!T) return; T.selT=null; T.sel=k; tone(620,0,.05); tdPanel(); }
+function tdDeselect(){ if(!TD) return; TD.selT=null; tdPanel(); }
+function tdSpeed(){ const T=TD; if(!T) return; T.speed=T.speed===1?2:(T.speed===2?3:1); tone(700,0,.05); tdPanel(); }
+function tdSay(m){ if(TD){ TD.msg=m; TD.msgT=55; } }
+function tdSendNow(){ const T=TD; if(!T||T.go) return;
+  if(T.queue.length||T.foes.length){ buzz(); return tdSay(H('הגל עוד רץ','Wave still running')); }
+  if(T.wave>=T.waves) return;
+  const bonus=Math.max(0,Math.round(T.rest/12)); T.gold+=bonus; T.rest=0;
+  if(bonus){ flash('🪙'); tdSay('+🪙'+bonus+' '+H('בונוס זריזות','speed bonus')); } tdPanel(); }
+function tdTap(gx,gy){ const T=TD; if(!T||T.go||curGame!=='castle') return;
+  if(gx<0||gy<0||gx>=T.cols||gy>=T.rows) return;
+  const hit=T.towers.filter(function(w){ return w.gx===gx&&w.gy===gy; })[0];
+  if(hit){ T.selT=(T.selT===hit)?null:hit; tone(660,0,.05); return tdPanel(); }
+  if(T.selT){ T.selT=null; tdPanel(); }
+  if(T.ps.has(gx+','+gy)){ buzz(); return tdSay(H('לא על השביל','Not on the path')); }
+  if(T.blocks.has(gx+','+gy)){ buzz(); return tdSay(H('המשבצת חסומה','Blocked tile')); }
+  const d=TD_T[T.sel]; if(T.gold<d.cost){ buzz(); flash('🪙'); return tdSay(H('אין מספיק זהב','Not enough gold')); }
+  T.gold-=d.cost;
+  T.towers.push({gx:gx,gy:gy,k:T.sel,lv:1,cd:0,px:tdCX(gx),py:tdCY(gy),show:34,ang:-Math.PI/2,flash:0});
+  chime(); tdPanel(); }
+function tdUpgrade(){ const T=TD, w=T&&T.selT; if(!w) return;
+  if(w.lv>=TD_MAXLV){ buzz(); return tdSay(H('כבר ברמה הכי גבוהה','Already max level')); }
+  const c=tdUpCost(w.k,w.lv);
+  if(T.gold<c){ buzz(); flash('🪙'); return tdSay(H('אין מספיק זהב לשדרוג','Not enough gold')); }
+  T.gold-=c; w.lv++; w.show=40; chime(); flash('⬆️');
+  T.nums.push({x:w.px,y:w.py-14,v:'LV'+w.lv,t:34,c:'#ffd76a'}); tdPanel(); }
+function tdSell(){ const T=TD, w=T&&T.selT; if(!w) return;
+  T.gold+=tdSellVal(w); T.towers.splice(T.towers.indexOf(w),1); T.selT=null;
+  tone(520,0,.08); tone(680,.08,.1); tdPanel(); }
 function tdCX(gx){ return gx*TD.cell+TD.cell/2; }
 function tdCY(gy){ return TD.oy+gy*TD.cell+TD.cell/2; }
-function castleGame(){ stopArcade(); curGame='castle'; arcScore=0;
-  const path=tdPath();
-  TD={cell:40,cols:9,rows:11,oy:34,path:path,ps:new Set(path.map(p=>p[0]+','+p[1])),
-      towers:[],foes:[],shots:[],blast:[],gold:75,lives:5,wave:0,spawned:0,quota:0,gap:0,rest:90,
-      sel:'arch',msg:'',msgT:0,go:false};
-  const foot=`<div class="tdpick">${Object.keys(TD_T).map(k=>`<button id="tdb_${k}" class="tdbtn${k==='arch'?' on':''}" onclick="tdPick('${k}')"><span class="te">${TD_T[k].e}</span><span class="tc">🪙${TD_T[k].cost}</span></button>`).join('')}</div>
-    ${footHint(H('בחרו מגן ואז לחצו על משבצת ירוקה','Pick a defender, then tap a green tile'))}`;
-  const cv=gameCanvas('🏰 '+H('הגנת הטירה','Castle Defense'),360,474,foot);
-  if(!cv) return; cv.style.touchAction='none';
-  cv.onpointerdown=function(e){ e.preventDefault(); const p=ngPos(cv,e); tdBuild(Math.floor(p.x/TD.cell),Math.floor((p.y-TD.oy)/TD.cell)); };
-  ngEvery(33,tdStep); tdDraw(); }
-function tdPick(k){ if(!TD) return; TD.sel=k; tone(620,0,.05);
-  Object.keys(TD_T).forEach(x=>{ const b=document.getElementById('tdb_'+x); if(b) b.classList.toggle('on',x===k); }); }
-function tdSay(m){ TD.msg=m; TD.msgT=55; }
-function tdBuild(gx,gy){ const T=TD; if(!T||T.go||curGame!=='castle') return;
-  if(gx<0||gy<0||gx>=T.cols||gy>=T.rows) return;
-  if(T.ps.has(gx+','+gy)){ buzz(); return tdSay(H('לא על השביל','Not on the path')); }
-  if(T.towers.some(w=>w.gx===gx&&w.gy===gy)){ buzz(); return tdSay(H('כאן כבר יש מגן','Already taken')); }
-  const d=TD_T[T.sel]; if(T.gold<d.cost){ buzz(); flash('🪙'); return tdSay(H('אין מספיק זהב','Not enough gold')); }
-  T.gold-=d.cost; T.towers.push({gx:gx,gy:gy,k:T.sel,cd:0,px:tdCX(gx),py:tdCY(gy),show:34}); chime(); }
-function tdWave(){ const T=TD; T.wave++; T.quota=5+T.wave*2; T.spawned=0; T.gap=10; T.rest=110;
-  T.gold+=18+T.wave*3; tdSay((T.wave%5===0?'👹 ':'')+H('גל','Wave')+' '+T.wave); tone(420,0,.12); tone(620,.12,.16); }
-function tdSpawn(){ const T=TD, w=T.wave, boss=(T.spawned===0&&w%5===0), hp=boss?(26+w*14):(4+w*2.4);
-  T.foes.push({i:0,x:tdCX(T.path[0][0]),y:tdCY(T.path[0][1]),hp:hp,max:hp,
-    spd:boss?1.0:(1.35+Math.min(0.9,w*0.06)),slow:0,e:boss?'👹':rnd(TD_FOE),r:boss?17:13,boss:boss});
-  T.spawned++; }
+
+// ---------- גלים ----------
+function tdWave(){ const T=TD; if(T.wave>=T.waves) return;
+  if(T.wave>0){ T.gold+=16+T.wave*3; }   // בונוס על סיום הגל הקודם
+  T.wave++;
+  const L=T.lvl, w=T.wave, last=(w===T.waves), boss=last||(w%5===0);
+  const n=5+Math.floor(w*1.5)+Math.floor(L/2);
+  const hp=(3+w*1.7)*(1+(L-1)*0.12);
+  const spd=1.3+Math.min(0.7,(L-1)*0.045);
+  const q=[];
+  if(boss) q.push({k:'boss',hp:hp*TD_K.boss.hp*(last?1.2:1),spd:spd});
+  for(let i=0;i<n;i++){ let k='walk';
+    const r=Math.random();
+    if(w>=3 && r<0.26) k='fast'; else if(w>=5 && r<0.46) k='tank';
+    q.push({k:k,hp:hp*TD_K[k].hp,spd:spd}); }
+  T.queue=q; T.gap=8; T.rest=150;
+  tdSay((boss?'👹 ':'')+H('גל','Wave')+' '+w+'/'+T.waves); tone(420,0,.12); tone(620,.12,.16); }
+function tdSpawn(){ const T=TD, d=T.queue.shift(); if(!d) return; const K=TD_K[d.k];
+  T.foes.push({i:0,x:tdCX(T.path[0][0]),y:tdCY(T.path[0][1]),hp:d.hp,max:d.hp,kind:d.k,
+    spd:d.spd*K.spd,slow:0,burn:0,burnD:0,arm:K.arm,e:rnd(K.e),r:K.r,boss:d.k==='boss',gold:K.gold}); }
+
+// ---------- לולאת המשחק ----------
 function tdStep(){ const T=TD; if(!T||curGame!=='castle'||T.go) return;
+  for(let s=0;s<T.speed;s++){ if(TD===T && !T.go) tdTick(); }
+  const sc=document.getElementById('arcsc'); if(sc && sc.textContent!=String(arcScore)) sc.textContent=arcScore;
+  tdDraw(); }
+function tdTick(){ const T=TD;
   if(T.msgT>0) T.msgT--;
-  if(T.spawned>=T.quota && !T.foes.length){ if(T.rest>0) T.rest--; else tdWave(); }
-  else if(T.spawned<T.quota && --T.gap<=0){ tdSpawn(); T.gap=Math.max(16,42-T.wave*2); }
+  // תזמון גלים
+  if(!T.queue.length && !T.foes.length){
+    if(T.wave>=T.waves) return tdWin();
+    if(T.rest>0) T.rest--; else tdWave(); }
+  else if(T.queue.length && --T.gap<=0){ tdSpawn(); T.gap=Math.max(13,40-T.wave*2); }
+  // תנועת אויבים
   for(let n=T.foes.length-1;n>=0;n--){ const f=T.foes[n];
-    let left=f.spd*(f.slow>0?0.45:1); if(f.slow>0) f.slow--;
+    if(f.burn>0){ f.burn--; f.hp-=f.burnD; }
+    let left=f.spd*(f.slow>0?0.42:1); if(f.slow>0) f.slow--;
     while(left>0 && f.i<T.path.length-1){ const nx=tdCX(T.path[f.i+1][0]), ny=tdCY(T.path[f.i+1][1]);
       const dx=nx-f.x, dy=ny-f.y, d=Math.sqrt(dx*dx+dy*dy);
       if(d<=left){ f.x=nx; f.y=ny; f.i++; left-=d; } else { f.x+=dx/d*left; f.y+=dy/d*left; left=0; } }
-    if(f.i>=T.path.length-1){ T.foes.splice(n,1); T.lives--; buzz(); flash('💔');
-      if(T.lives<=0){ T.go=true; stopArcade(); setTimeout(()=>arcGameOver('🏰',arcScore,'castleGame'),400); return; } } }
-  T.towers.forEach(w=>{ const d=TD_T[w.k]; if(w.show>0) w.show--;
-    if(w.k==='ice'){ T.foes.forEach(f=>{ if(Math.hypot(f.x-w.px,f.y-w.py)<=d.rng) f.slow=6; }); return; }
+    if(f.i>=T.path.length-1){ T.foes.splice(n,1); T.lives-=f.boss?2:1; buzz(); flash('💔');
+      if(T.lives<=0){ T.lives=0; return tdLose(); } } }
+  // מגדלים יורים
+  T.towers.forEach(function(w){ const b=TD_T[w.k], st=tdStat(w.k,w.lv);
+    if(w.show>0) w.show--; if(w.flash>0) w.flash--;
+    if(b.aura){ let any=false;
+      T.foes.forEach(function(f){ if(Math.hypot(f.x-w.px,f.y-w.py)>st.rng) return; any=true;
+        if(b.slow) f.slow=6;
+        if(b.burn){ f.burn=Math.max(f.burn,52); f.burnD=Math.max(f.burnD,st.dmg*0.06); }
+        f.hp-=st.dmg*(1-f.arm)*0.09; });
+      if(any && w.cd<=0){ w.cd=st.rate; w.flash=4; }
+      if(w.cd>0) w.cd--; return; }
     if(w.cd>0){ w.cd--; return; }
-    let best=null; T.foes.forEach(f=>{ if(Math.hypot(f.x-w.px,f.y-w.py)<=d.rng && (!best||f.i>best.i)) best=f; });
-    if(best){ w.cd=d.rate; T.shots.push({x:w.px,y:w.py,f:best,dmg:d.dmg,sp:d.splash||0,k:w.k}); tone(w.k==='bomb'?300:780,0,.04); } });
+    let best=null;
+    T.foes.forEach(function(f){ if(Math.hypot(f.x-w.px,f.y-w.py)<=st.rng && (!best||f.i>best.i)) best=f; });
+    if(!best) return;
+    w.cd=st.rate; w.flash=5; w.ang=Math.atan2(best.y-w.py,best.x-w.px);
+    if(b.pierce){ tdHurt(best,st.dmg,1);
+      T.bolts.push({a:[[w.px,w.py],[best.x,best.y]],t:7,c:'#c9a6ff',wd:2.5}); tone(220,0,.09); return; }
+    if(b.chain){ let cur=best, dmg=st.dmg; const pts=[[w.px,w.py]], seen=[];
+      for(let h=0;h<b.chain && cur;h++){ pts.push([cur.x,cur.y]); tdHurt(cur,dmg,0); seen.push(cur); dmg*=0.68;
+        let nx=null,nd=1e9;
+        T.foes.forEach(function(o){ if(seen.indexOf(o)>=0||o.hp<=0) return;
+          const dd=Math.hypot(o.x-cur.x,o.y-cur.y); if(dd<70&&dd<nd){ nd=dd; nx=o; } });
+        cur=nx; }
+      T.bolts.push({a:pts,t:8,c:'#ffe680',wd:3}); tone(900,0,.05); return; }
+    T.shots.push({x:w.px,y:w.py,f:best,dmg:st.dmg,sp:b.splash||0,k:w.k,col:b.col});
+    tone(w.k==='bomb'?300:780,0,.04); });
+  // קליעים
   for(let n=T.shots.length-1;n>=0;n--){ const s=T.shots[n], f=s.f;
     if(!f||f.hp<=0||T.foes.indexOf(f)<0){ T.shots.splice(n,1); continue; }
     const dx=f.x-s.x, dy=f.y-s.y, d=Math.hypot(dx,dy)||1;
-    if(d<=12){ T.shots.splice(n,1); f.hp-=s.dmg;
-      if(s.sp){ T.foes.forEach(o=>{ if(o!==f && Math.hypot(o.x-f.x,o.y-f.y)<=s.sp) o.hp-=s.dmg*0.55; }); T.blast.push({x:f.x,y:f.y,t:10,r:s.sp}); } }
+    if(d<=12){ T.shots.splice(n,1); tdHurt(f,s.dmg,0);
+      if(s.sp){ T.foes.forEach(function(o){ if(o!==f && Math.hypot(o.x-f.x,o.y-f.y)<=s.sp) tdHurt(o,s.dmg*0.55,0); });
+        T.blast.push({x:f.x,y:f.y,t:10,r:s.sp}); } }
     else { s.x+=dx/d*11; s.y+=dy/d*11; } }
+  // מוות ותגמול
   for(let n=T.foes.length-1;n>=0;n--){ const f=T.foes[n]; if(f.hp>0) continue;
-    T.foes.splice(n,1); T.gold+=f.boss?40:6; arcScore+=f.boss?60:10; tone(f.boss?280:840,0,.06);
+    T.foes.splice(n,1);
+    const g=Math.max(2,Math.round((2+f.max/9)*f.gold)); T.gold+=g;
+    arcScore+=f.boss?60:10; tone(f.boss?280:840,0,.06);
+    T.nums.push({x:f.x,y:f.y,v:'+'+g,t:26,c:'#ffd76a'});
     if(f.boss){ confetti(); flash('👑'); } }
-  T.blast=T.blast.filter(b=>(--b.t)>0);
-  const sc=document.getElementById('arcsc'); if(sc && sc.textContent!=String(arcScore)) sc.textContent=arcScore;
-  tdDraw(); }
+  T.blast=T.blast.filter(function(b){ return (--b.t)>0; });
+  T.bolts=T.bolts.filter(function(b){ return (--b.t)>0; });
+  T.nums=T.nums.filter(function(b){ b.y-=0.7; return (--b.t)>0; }); }
+function tdHurt(f,amt,pierce){ const T=TD; const real=amt*(pierce?1:(1-f.arm));
+  f.hp-=real; if(real>=2.2) T.nums.push({x:f.x+(Math.random()*10-5),y:f.y-10,v:Math.round(real),t:20,c:'#fff'}); }
+
+// ---------- סיום ----------
+function tdWin(){ const T=TD; if(!T||T.won) return; T.won=true; T.go=true; stopArcade(); confetti();
+  const frac=T.lives/T.maxLives, st=frac>=1?3:(frac>=0.6?2:1);
+  const P=tdProg(); P.stars[T.lvl]=Math.max(P.stars[T.lvl]||0,st);
+  const nx=Math.min(TD_MAPS.length,T.lvl+1); if(P.best<nx) P.best=nx;
+  const p=prof(); if(p && st===3 && !P['c'+T.lvl]){ P['c'+T.lvl]=1; p.coins=(p.coins||0)+1; }
+  save();
+  const more=T.lvl<TD_MAPS.length;
+  setTimeout(function(){ app.innerHTML=`<div class="screen">${topbar()}<div class="card">
+    <div class="prompt" style="font-weight:bold">🎉 ${H('הטירה ניצלה!','Castle saved!')}</div>
+    <div style="font-size:clamp(38px,11vw,64px);letter-spacing:4px">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div>
+    <div style="font-size:clamp(30px,9vw,52px);font-weight:bold;color:#ff5fa2">${arcScore}</div>
+    <div class="speak-hint" style="margin:6px 0 14px">❤️ ${T.lives}/${T.maxLives} · ${H('שלב','Level')} ${T.lvl} — ${H(TD_MAPS[T.mi].nm[0],TD_MAPS[T.mi].nm[1])}</div>
+    ${more?`<button class="replay" style="background:#3f9142;box-shadow:0 5px 0 #2c6b2e;color:#fff" onclick="tdStart(${T.lvl+1})">${H('שלב','Level')} ${T.lvl+1} ▶</button><br>`:
+      `<div class="prompt" style="color:#3f9142;font-weight:bold">🏆 ${H('סיימת את כל השלבים!','All levels done!')}</div>`}
+    <button class="replay" style="margin-top:12px" onclick="tdMenu()">🗺️ ${H('בחירת שלב','Level select')}</button></div></div>`; },450); }
+function tdLose(){ const T=TD; if(!T||T.go) return; T.go=true; stopArcade(); buzz();
+  const lv=T.lvl, reached=T.wave, tot=T.waves;
+  setTimeout(function(){ app.innerHTML=`<div class="screen">${topbar()}<div class="card">
+    <div class="prompt" style="font-weight:bold">💔 ${H('המפלצות הגיעו לטירה','The monsters got through')}</div>
+    <div style="font-size:clamp(30px,9vw,52px);font-weight:bold;color:#ff5fa2">${H('גל','Wave')} ${reached}/${tot}</div>
+    <div class="speak-hint" style="margin:8px 0 14px">${H('טיפ: שדרגו מגדל קיים במקום לבנות חדש — זה חזק יותר','Tip: upgrading a tower beats building another one')}</div>
+    <button class="replay" style="background:#fa709a;box-shadow:0 5px 0 #d6457a;color:#fff" onclick="tdStart(${lv})">${t('b_playagain')}</button><br>
+    <button class="replay" style="margin-top:12px" onclick="tdMenu()">🗺️ ${H('בחירת שלב','Level select')}</button></div></div>`; },400); }
+
+// ---------- ציור ----------
+function tdRoad(c,T,wd,col){ const S=T.cell; c.strokeStyle=col; c.lineWidth=wd; c.lineJoin='round'; c.lineCap='round';
+  c.beginPath(); T.path.forEach(function(p,i){ const x=p[0]*S+S/2, y=T.oy+p[1]*S+S/2;
+    if(i===0) c.moveTo(x,y); else c.lineTo(x,y); }); c.stroke(); }
 function tdDraw(){ const T=TD, cv=document.getElementById('cv'); if(!cv){ stopArcade(); return; }
-  const c=cv.getContext('2d'), S=T.cell;
-  c.fillStyle='#dff3c8'; c.fillRect(0,0,cv.width,cv.height);
-  for(let y=0;y<T.rows;y++) for(let x=0;x<T.cols;x++){ if(T.ps.has(x+','+y)) continue;
-    c.fillStyle=((x+y)%2)?'#cdebb0':'#d8f2bf'; c.fillRect(x*S,T.oy+y*S,S,S); }
-  c.fillStyle='#e6c68f'; T.path.forEach(p=>{ roundRect(c,p[0]*S+1,T.oy+p[1]*S+1,S-2,S-2,9); c.fill(); });
+  const c=cv.getContext('2d'), S=T.cell, TH=T.th;
+  c.fillStyle=TH.bg; c.fillRect(0,0,cv.width,cv.height);
+  for(let y=0;y<T.rows;y++) for(let x=0;x<T.cols;x++){
+    c.fillStyle=((x+y)%2)?TH.g1:TH.g2; c.fillRect(x*S,T.oy+y*S,S,S); }
+  tdRoad(c,T,S-2,TH.rd); tdRoad(c,T,S-16,TH.rd2);
   c.textAlign='center'; c.textBaseline='middle';
-  const last=T.path[T.path.length-1]; c.font='30px serif'; c.fillText('🏰',tdCX(last[0]),tdCY(last[1]));
-  T.towers.forEach(w=>{ const d=TD_T[w.k];
-    if(w.k==='ice'){ c.fillStyle='rgba(120,210,255,.17)'; c.beginPath(); c.arc(w.px,w.py,d.rng,0,7); c.fill(); }
-    if(w.show>0){ c.strokeStyle='rgba(50,80,150,.4)'; c.lineWidth=2; c.beginPath(); c.arc(w.px,w.py,d.rng,0,7); c.stroke(); }
-    c.fillStyle='rgba(255,255,255,.85)'; c.beginPath(); c.arc(w.px,w.py,15,0,7); c.fill();
-    c.font='23px serif'; c.fillText(d.e,w.px,w.py); });
-  T.foes.forEach(f=>{ if(f.slow>0){ c.fillStyle='rgba(120,210,255,.55)'; c.beginPath(); c.arc(f.x,f.y,f.r+4,0,7); c.fill(); }
-    c.font=(f.boss?'30px':'22px')+' serif'; c.fillText(f.e,f.x,f.y);
-    const bw=f.boss?34:24, fr=Math.max(0,f.hp/f.max);
-    c.fillStyle='rgba(0,0,0,.25)'; c.fillRect(f.x-bw/2,f.y-f.r-9,bw,5);
-    c.fillStyle=fr>0.5?'#4cd964':(fr>0.25?'#ffcc00':'#ff5a5a'); c.fillRect(f.x-bw/2,f.y-f.r-9,bw*fr,5); });
-  T.shots.forEach(s=>{ c.fillStyle=s.k==='bomb'?'#33383d':'#7a4620'; c.beginPath(); c.arc(s.x,s.y,s.k==='bomb'?5:3.5,0,7); c.fill(); });
-  T.blast.forEach(b=>{ c.strokeStyle='rgba(255,140,60,'+(b.t/10).toFixed(2)+')'; c.lineWidth=3; c.beginPath(); c.arc(b.x,b.y,b.r*(1.25-b.t/13),0,7); c.stroke(); });
-  if(T.spawned>=T.quota && !T.foes.length && T.rest>0){ c.fillStyle='rgba(0,0,0,.45)'; roundRect(c,cv.width/2-92,cv.height-34,184,26,10); c.fill();
-    c.fillStyle='#fff'; c.font='bold 14px system-ui,sans-serif'; c.fillText(H('הגל הבא בעוד','Next wave in')+' '+Math.ceil(T.rest/30),cv.width/2,cv.height-21); }
+  c.font='22px serif'; let di=0;
+  T.blocks.forEach(function(k){ const a=k.split(','); c.fillText(TH.dec[di++%TH.dec.length],a[0]*S+S/2,T.oy+a[1]*S+S/2); });
+  const st0=T.path[0]; c.font='20px serif'; c.fillText('🚩',st0[0]*S+S/2,T.oy+st0[1]*S+S/2);
+  const last=T.path[T.path.length-1]; c.font='31px serif'; c.fillText('🏰',tdCX(last[0]),tdCY(last[1]));
+  // מגדלים
+  T.towers.forEach(function(w){ const b=TD_T[w.k], s=tdStat(w.k,w.lv), sel=(T.selT===w);
+    if(b.aura){ c.fillStyle=(w.k==='ice')?'rgba(120,210,255,.15)':'rgba(255,110,60,.13)';
+      c.beginPath(); c.arc(w.px,w.py,s.rng,0,7); c.fill(); }
+    if(sel||w.show>0){ c.strokeStyle=sel?'rgba(255,220,90,.95)':'rgba(50,80,150,.45)'; c.lineWidth=sel?3:2;
+      c.beginPath(); c.arc(w.px,w.py,s.rng,0,7); c.stroke(); }
+    c.fillStyle=sel?'#fff3c4':'rgba(255,255,255,.88)'; c.beginPath(); c.arc(w.px,w.py,15,0,7); c.fill();
+    c.strokeStyle=b.col; c.lineWidth=2.5; c.beginPath(); c.arc(w.px,w.py,15,0,7); c.stroke();
+    if(w.flash>0){ c.fillStyle='rgba(255,255,200,'+(w.flash/6).toFixed(2)+')'; c.beginPath(); c.arc(w.px,w.py,19,0,7); c.fill(); }
+    c.font='22px serif'; c.fillText(b.e,w.px,w.py-1);
+    for(let i=0;i<w.lv;i++){ c.fillStyle='#ffc531'; c.beginPath();
+      c.arc(w.px-(w.lv-1)*3.6+i*7.2,w.py+15,2.6,0,7); c.fill(); } });
+  // אויבים
+  T.foes.forEach(function(f){
+    if(f.slow>0){ c.fillStyle='rgba(120,210,255,.5)'; c.beginPath(); c.arc(f.x,f.y,f.r+4,0,7); c.fill(); }
+    if(f.burn>0){ c.fillStyle='rgba(255,120,50,.45)'; c.beginPath(); c.arc(f.x,f.y,f.r+3,0,7); c.fill(); }
+    c.font=(f.boss?'31px':(f.kind==='tank'?'25px':'22px'))+' serif'; c.fillText(f.e,f.x,f.y);
+    const bw=f.boss?38:26, fr=Math.max(0,f.hp/f.max);
+    c.fillStyle='rgba(0,0,0,.3)'; c.fillRect(f.x-bw/2,f.y-f.r-9,bw,5);
+    c.fillStyle=fr>0.5?'#4cd964':(fr>0.25?'#ffcc00':'#ff5a5a'); c.fillRect(f.x-bw/2,f.y-f.r-9,bw*fr,5);
+    if(f.arm>0.2){ c.font='9px serif'; c.fillText('🛡️',f.x+bw/2+4,f.y-f.r-6); } });
+  T.shots.forEach(function(s){ c.fillStyle=s.col||'#7a4620';
+    c.beginPath(); c.arc(s.x,s.y,s.k==='bomb'?5:3.5,0,7); c.fill(); });
+  T.bolts.forEach(function(b){ c.strokeStyle=b.c; c.globalAlpha=Math.min(1,b.t/6); c.lineWidth=b.wd;
+    c.beginPath(); b.a.forEach(function(p,i){ i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]); }); c.stroke(); c.globalAlpha=1; });
+  T.blast.forEach(function(b){ c.strokeStyle='rgba(255,140,60,'+(b.t/10).toFixed(2)+')'; c.lineWidth=3;
+    c.beginPath(); c.arc(b.x,b.y,b.r*(1.25-b.t/13),0,7); c.stroke(); });
+  c.font='bold 13px system-ui,sans-serif';
+  T.nums.forEach(function(b){ c.fillStyle=b.c; c.globalAlpha=Math.min(1,b.t/12); c.fillText(b.v,b.x,b.y); c.globalAlpha=1; });
+  // הודעת "הגל הבא"
+  if(!T.queue.length && !T.foes.length && T.rest>0 && T.wave<T.waves){
+    c.fillStyle='rgba(0,0,0,.45)'; roundRect(c,cv.width/2-98,cv.height-34,196,26,10); c.fill();
+    c.fillStyle='#fff'; c.font='bold 14px system-ui,sans-serif'; c.textAlign='center';
+    c.fillText(H('גל','Wave')+' '+(T.wave+1)+' '+H('בעוד','in')+' '+Math.ceil(T.rest/30)+'s',cv.width/2,cv.height-21); }
+  // HUD
   c.fillStyle='#2f4858'; c.fillRect(0,0,cv.width,T.oy);
-  c.font='bold 16px system-ui,sans-serif';
+  c.font='bold 15px system-ui,sans-serif'; c.textBaseline='middle';
   c.textAlign='left'; c.fillStyle='#ffd76a'; c.fillText('🪙 '+T.gold,8,T.oy/2);
-  c.textAlign='center'; c.fillStyle='#ff9db2'; c.fillText('❤️ '+Math.max(0,T.lives),cv.width/2,T.oy/2);
-  c.textAlign='right'; c.fillStyle='#8ee6ff'; c.fillText(H('גל','Wave')+' '+T.wave,cv.width-8,T.oy/2);
-  if(T.msgT>0){ c.fillStyle='rgba(0,0,0,.6)'; roundRect(c,cv.width/2-90,T.oy+12,180,32,12); c.fill();
-    c.fillStyle='#fff'; c.font='bold 16px system-ui,sans-serif'; c.textAlign='center'; c.fillText(T.msg,cv.width/2,T.oy+29); } }
+  c.textAlign='center'; c.fillStyle='#ff9db2'; c.fillText('❤️ '+Math.max(0,T.lives),cv.width/2-24,T.oy/2);
+  c.fillStyle='#8ee6ff'; c.fillText(H('גל','Wave')+' '+T.wave+'/'+T.waves,cv.width/2+56,T.oy/2);
+  c.textAlign='right'; c.fillStyle='#cfe6a0'; c.fillText('L'+T.lvl,cv.width-8,T.oy/2);
+  if(T.msgT>0){ c.fillStyle='rgba(0,0,0,.62)'; roundRect(c,cv.width/2-104,T.oy+12,208,32,12); c.fill();
+    c.fillStyle='#fff'; c.font='bold 15px system-ui,sans-serif'; c.textAlign='center';
+    c.fillText(T.msg,cv.width/2,T.oy+29); } }
 
 // ============ 🧱 שובר לבנים — שלבים, לבנים קשוחות ובונוסים נופלים ============
 let BK=null;
