@@ -1,7 +1,7 @@
 // Service worker — makes the game work offline after first load.
 // ⚠️ HTML is NETWORK-FIRST on purpose. The old cache-first version kept serving a stale
 // index.html forever, so deploys never reached the kids' devices. Do not "optimise" this back.
-const CACHE = 'hebrew-school-20260908114746';
+const CACHE = 'hebrew-school-20260908150803';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
