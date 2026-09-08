@@ -218,6 +218,7 @@
   .m3grid { display:grid; gap:4px; width:min(92vw,44vh); direction:ltr; }
   .m3c { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:clamp(19px,5.6vw,32px); border-radius:12px; background:rgba(255,255,255,.72); box-shadow:inset 0 -3px 0 rgba(0,0,0,.06); cursor:pointer; user-select:none; }
   .m3c.m3sel { background:#ffe28a; box-shadow:0 0 0 3px #ffb300 inset; transform:scale(1.08); }
+  .m3c.m3cur { outline:3px solid #6a5acd; outline-offset:-3px; }
   .m3c.m3pop { animation:m3pop .25s ease-in forwards; }
   .m3c.m3fall { animation:m3fall .22s ease-out; }
   @keyframes m3pop { to { transform:scale(.1) rotate(150deg); opacity:0 } }
@@ -278,6 +279,9 @@
   .tdact.up { background:#5b8def; }
   .tdact.sell { background:#f0a63d; }
   .tdact.mv { background:#8e6bd8; }
+  .kbd { display:none; font-size:12px; color:#8b8ba3; margin-top:6px; line-height:1.7; }
+  .kbd b { background:#ececf6; color:#4a4a68; border-radius:5px; padding:1px 6px; font-weight:bold; margin:0 1px; display:inline-block; direction:ltr; }
+  @media (hover:hover) and (pointer:fine){ .kbd { display:block; } }
   .tdact.x { background:#b9b9c6; }
   .tdact.off { opacity:.45; }
   /* ---- מסך מחשב: לוח גדול ופאנל בצד ---- */
@@ -437,7 +441,7 @@ function imgFallback(el,key){ try{ el.insertAdjacentHTML('afterend', artSVG(key)
 // ================= שמירת נתונים =================
 const KEY = "betSeferIvrit_v1";
 const PATH_VERSION=4;
-const BUILD_VER='20260908150803'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
+const BUILD_VER='20260908152026'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
 let data = null;
 function defaultData(){
   return { current:null, voiceURI:null, lang:"he", profiles:{} };
@@ -3797,9 +3801,40 @@ function ngEvery(ms,fn){ const id=setInterval(fn,ms); ngTimers.push(id); return 
 function stopNewGames(){ ngTimers.forEach(id=>clearInterval(id)); ngTimers=[]; NGK={}; }
 function ngPos(cv,e){ const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*(cv.width/r.width), y:(e.clientY-r.top)*(cv.height/r.height)}; }
 function ngHud(txt){ return `<div class="ngbar">${txt}</div>`; }
+// ----- מקלדת: כל משחק גדול נשלט גם בלי עכבר ומגע -----
+const NG_ARROW={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
+                w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]};
+function ngKeyFire(e){ return e.key===' '||e.key==='Spacebar'||e.key==='Enter'; }
 window.addEventListener('keydown',function(e){
-  if(curGame==='brk'||curGame==='spc'){ if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ NGK[e.key]=1; e.preventDefault(); } }
-  else if(curGame==='n2048'){ const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key]; if(m){ tgMove(m[0],m[1]); e.preventDefault(); } } });
+  if(e.ctrlKey||e.altKey||e.metaKey) return;
+  const tag=(e.target&&e.target.tagName)||''; if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
+  const m=NG_ARROW[e.key];
+  if(curGame==='brk'){
+    if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ NGK[e.key]=1; e.preventDefault(); }
+    else if(ngKeyFire(e)){ bkLaunch(); e.preventDefault(); } }
+  else if(curGame==='spc'){ if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ NGK[e.key]=1; e.preventDefault(); } }
+  else if(curGame==='n2048'){ if(m){ tgMove(m[0],m[1]); e.preventDefault(); } }
+  else if(curGame==='m3'){
+    if(m){ m3Key(m[0],m[1]); e.preventDefault(); }
+    else if(ngKeyFire(e)){ m3KeyPick(); e.preventDefault(); } }
+  else if(curGame==='castle'){
+    if(m){ tdKey(m[0],m[1]); e.preventDefault(); }
+    else if(ngKeyFire(e)){ tdKeyPick(); e.preventDefault(); }
+    else if(e.key==='u'||e.key==='U'){ tdUpgrade(); e.preventDefault(); }
+    else if(e.key==='m'||e.key==='M'){ TD&&TD.moving?tdMoveCancel():tdMoveStart(); e.preventDefault(); }
+    else if(e.key==='x'||e.key==='X'){ tdSell(); e.preventDefault(); }
+    else if(e.key==='n'||e.key==='N'){ tdSendNow(); e.preventDefault(); }
+    else if(e.key==='f'||e.key==='F'){ tdSpeed(); e.preventDefault(); }
+    else if(e.key>='1'&&e.key<='6'){ const ks=Object.keys(TD_T)[+e.key-1];
+      if(ks&&tdUnlocked(ks)) tdPick(ks); else buzz(); e.preventDefault(); }
+    else if(e.key==='Escape'){ tdDeselect(); e.preventDefault(); } }
+  else if(curGame==='bs'){
+    if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ bsKeyAim(e.key==='ArrowLeft'?-1:1); e.preventDefault(); }
+    else if(ngKeyFire(e)||e.key==='ArrowUp'){ bsShoot(); e.preventDefault(); } }
+  else if(curGame==='pizza'){
+    if(e.key>='1'&&e.key<='8'){ pzAdd(+e.key-1); e.preventDefault(); }
+    else if(ngKeyFire(e)){ pzKeyGo(); e.preventDefault(); }
+    else if(e.key==='Backspace'||e.key==='Delete'){ pzClear(); e.preventDefault(); } } });
 window.addEventListener('keyup',function(e){ if(NGK[e.key]) NGK[e.key]=0; });
 
 // ============ 🍭 שלישיות מתוקות — התאמת 3 עם שרשראות, יעד ושלבים ============
@@ -3834,14 +3869,24 @@ function m3HasMove(){ const M=M3;
   return false; }
 function m3Render(pop,fall){ const M=M3; if(!M) return;
   const cells=[]; for(let r=0;r<M.rows;r++) for(let c=0;c<M.cols;c++){ const i=r*M.cols+c;
-    const cls='m3c'+(M.sel===i?' m3sel':'')+(pop&&pop.indexOf(i)>=0?' m3pop':'')+(fall?' m3fall':'');
+    const cls='m3c'+(M.sel===i?' m3sel':'')+(M.cur&&M.cur.r===r&&M.cur.c===c?' m3cur':'')
+      +(pop&&pop.indexOf(i)>=0?' m3pop':'')+(fall?' m3fall':'');
     cells.push(`<div class="${cls}" onclick="m3Tap(${r},${c})">${M.b[r][c]||''}</div>`); }
   app.innerHTML=`<div class="gamescreen" style="background:linear-gradient(160deg,#ffe1f0,#e7f0ff)">${gameTop('🍭 '+H('שלישיות מתוקות','Candy Match'))}
     <div class="gamestage" style="flex-direction:column;gap:8px">
       ${ngHud(`<span>${H('שלב','Level')} <b>${M.lvl}</b></span><span>${M.goal} <b>${Math.min(M.got,M.need)}/${M.need}</b></span><span>🔄 <b>${M.moves}</b></span>`)}
       <div class="m3grid" style="grid-template-columns:repeat(${M.cols},1fr)">${cells.join('')}</div>
       <div class="speak-hint">${H('החליפו שתי ממתקים שכנים ליצירת שלישייה','Swap two neighbours to line up three')}</div>
+      <div class="kbd"><b>← ↑ ↓ →</b> ${H('סמן','cursor')} · <b>Enter</b> ${H('בחירה','select')}</div>
     </div></div>`; }
+function m3Key(dx,dy){ const M=M3; if(!M||curGame!=='m3') return;
+  M.cur=M.cur||{r:Math.floor(M.rows/2),c:Math.floor(M.cols/2)};
+  M.cur.r=Math.max(0,Math.min(M.rows-1,M.cur.r+dy));
+  M.cur.c=Math.max(0,Math.min(M.cols-1,M.cur.c+dx));
+  tone(560,0,.03); m3Render(); }
+function m3KeyPick(){ const M=M3; if(!M||curGame!=='m3') return;
+  if(!M.cur){ M.cur={r:Math.floor(M.rows/2),c:Math.floor(M.cols/2)}; return m3Render(); }
+  m3Tap(M.cur.r,M.cur.c); }
 function m3Tap(r,c){ const M=M3; if(!M||M.busy||curGame!=='m3') return; const i=r*M.cols+c;
   if(M.sel===null||M.sel===i){ M.sel=M.sel===i?null:i; tone(560,0,.05); return m3Render(); }
   const sr=Math.floor(M.sel/M.cols), sc=M.sel%M.cols;
@@ -4000,7 +4045,8 @@ function tdStart(n){ stopArcade(); curGame='castle'; arcScore=0;
       gold:m.gold,lives:m.lives,maxLives:m.lives,wave:0,waves:m.w,gap:0,rest:150,
       sel:'arch',selT:null,moving:null,ev:null,nextEv:null,speed:1,msg:'',msgT:0,go:false,won:false};
   const cv=gameCanvas('🏰 '+H(m.nm[0],m.nm[1]),360,474,
-    `<div id="tdpanel"></div><div class="speak-hint" id="tdhint" style="margin-top:4px">${H('בחרו תותח ולחצו על משבצת ריקה','Pick a cannon, tap an empty tile')}</div>`);
+    `<div id="tdpanel"></div><div class="speak-hint" id="tdhint" style="margin-top:4px">${H('בחרו תותח ולחצו על משבצת ריקה','Pick a cannon, tap an empty tile')}</div>
+     <div class="kbd">${H('מקלדת','Keys')}: <b>← ↑ ↓ →</b> ${H('סמן','cursor')} · <b>Enter</b> ${H('בנה/בחר','build')} · <b>1-6</b> ${H('תותח','cannon')} · <b>U</b> ${H('שדרוג','upgrade')} · <b>M</b> ${H('הזזה','move')} · <b>X</b> ${H('מכירה','sell')} · <b>N</b> ${H('גל','wave')} · <b>F</b> ${H('מהירות','speed')}</div>`);
   if(!cv) return; cv.style.touchAction='none';
   cv.onpointerdown=function(e){ e.preventDefault(); const p=ngPos(cv,e);
     tdTap(Math.floor(p.x/TD.cell),Math.floor((p.y-TD.oy)/TD.cell)); };
@@ -4044,6 +4090,14 @@ function tdPick(k){ const T=TD; if(!T) return; T.selT=null; T.sel=k; tone(620,0,
 function tdDeselect(){ if(!TD) return; TD.selT=null; tdPanel(); }
 function tdSpeed(){ const T=TD; if(!T) return; T.speed=T.speed===1?2:(T.speed===2?3:1); tone(700,0,.05); tdPanel(); }
 function tdSay(m){ if(TD){ TD.msg=m; TD.msgT=55; } }
+function tdKey(dx,dy){ const T=TD; if(!T||T.go||curGame!=='castle') return;
+  T.cur=T.cur||{x:Math.floor(T.cols/2),y:Math.floor(T.rows/2)};
+  T.cur.x=Math.max(0,Math.min(T.cols-1,T.cur.x+dx));
+  T.cur.y=Math.max(0,Math.min(T.rows-1,T.cur.y+dy));
+  tone(560,0,.03); }
+function tdKeyPick(){ const T=TD; if(!T||T.go||curGame!=='castle') return;
+  if(!T.cur){ T.cur={x:Math.floor(T.cols/2),y:Math.floor(T.rows/2)}; return; }
+  tdTap(T.cur.x,T.cur.y); }
 function tdSendNow(){ const T=TD; if(!T||T.go) return;
   if(T.queue.length||T.foes.length){ buzz(); return tdSay(H('הגל עוד רץ','Wave still running')); }
   if(T.wave>=T.waves) return;
@@ -4236,6 +4290,8 @@ function tdDraw(){ const T=TD, cv=document.getElementById('cv'); if(!cv){ stopAr
     for(let i=0;i<w.lv;i++){ c.fillStyle='#ffc531'; c.beginPath();
       c.arc(w.px-(w.lv-1)*3.6+i*7.2,w.py+15,2.6,0,7); c.fill(); } });
   // אויבים
+  if(T.cur){ c.strokeStyle='#ffd54a'; c.lineWidth=3; c.setLineDash([6,4]);
+    c.strokeRect(T.cur.x*S+2,T.oy+T.cur.y*S+2,S-4,S-4); c.setLineDash([]); }
   if(T.moving){ c.fillStyle='rgba(255,255,255,.30)'; c.strokeStyle='rgba(60,180,90,.75)'; c.lineWidth=2;
     for(let y=0;y<T.rows;y++) for(let x=0;x<T.cols;x++){ const k=x+','+y;
       if(T.ps.has(k)||T.blocks.has(k)) continue;
@@ -4277,72 +4333,95 @@ function tdDraw(){ const T=TD, cv=document.getElementById('cv'); if(!cv){ stopAr
     c.fillStyle='#fff'; c.font='bold 15px system-ui,sans-serif'; c.textAlign='center';
     c.fillText(T.msg,cv.width/2,T.oy+29); } }
 
-// ============ 🧱 שובר לבנים — שלבים, לבנים קשוחות ובונוסים נופלים ============
+// ============ 🧱 שובר לבנים — 12 שלבים, צבעים, חלקיקים ובונוסים ============
 let BK=null;
 const BK_LV=[
-  ['1111111','1111111','1111111'],
-  ['.11111.','1122111','1112211','.11111.'],
-  ['2111112','1211121','1121211','1112111'],
-  ['3111113','1222221','1211121','1222221'],
-  ['1.1.1.1','.2.2.2.','1.1.1.1','.3.3.3.','2222222'],
-  ['3333333','2222222','1111111','.11111.','..111..']
+  ['1111111','1111111','1111111'],                                              // קיר
+  ['...1...','..121..','.12321.','1233321','.12321.','..121..'],                // יהלום
+  ['1.....1','.1...1.','..2.2..','...3...','..2.2..','.1...1.','1.....1'],      // איקס
+  ['3333333','3.....3','3.222.3','3.....3','3333333'],                          // מסגרת
+  ['1.1.1.1','.2.2.2.','1.1.1.1','.2.2.2.','3.3.3.3'],                          // שחמט
+  ['...3...','..333..','.22222.','1111111','1111111'],                          // פירמידה
+  ['.11.11.','1221221','.11.11.','2332332','.22.22.'],                          // גלים
+  ['.11.11.','1221221','1222221','.12221.','..222..','...2...'],                // לב
+  ['1111111','.....11','1111111','11.....','1111111','.....11','1111111'],      // סולם
+  ['3.3.3.3','3333333','2222222','2.2.2.2','1111111'],                          // טירה
+  ['...1...','...2...','1122211','.12321.','..2.2..','.1...1.'],                // כוכב
+  ['3333333','3222223','32...23','32.1.23','32...23','3222223','3333333']       // מבצר
 ];
-const BK_DROP=[{e:'🟩',k:'wide'},{e:'⚽',k:'multi'},{e:'🐢',k:'slow'},{e:'❤️',k:'life'}];
+// צבע לפי שורה — קשת בענן שיורדת במקום שלושה צבעים לפי חוזק
+const BK_COL=['#ff5c7a','#ff9f43','#ffd93d','#6bd968','#4dc8ff','#7b7bff','#c46bff'];
+const BK_BG=[['#1b2340','#2b1e4a'],['#12263f','#1e3a5f'],['#2b1633','#4a1f45'],
+             ['#0f2f2a','#1b4a3f'],['#2e1a12','#4d2a18'],['#191a3d','#2f2a5e']];
+const BK_DROP=[{e:'🟩',k:'wide'},{e:'⚽',k:'multi'},{e:'🐢',k:'slow'},{e:'❤️',k:'life'},{e:'🔥',k:'fire'}];
 function brickGame(){ stopArcade(); arcScore=0; BK=null; bkLevel(0); }
 function bkLevel(n){ stopArcade(); curGame='brk';
   const W=380,Hh=470,bw=49,bh=22, pat=BK_LV[n%BK_LV.length], lap=Math.floor(n/BK_LV.length), bricks=[];
-  pat.forEach(function(row,r){ for(let c=0;c<7;c++){ const ch=row[c]; if(ch==='.') continue;
-    bricks.push({x:9.5+c*(bw+3),y:46+r*(bh+4),w:bw,h:bh,hp:Math.min(3,parseInt(ch,10)+lap)}); } });
+  pat.forEach(function(row,r){ for(let c=0;c<7;c++){ const ch=row[c]; if(ch==='.'||ch===' ') continue;
+    bricks.push({x:9.5+c*(bw+3),y:46+r*(bh+4),w:bw,h:bh,hp:Math.min(4,parseInt(ch,10)+lap),
+                 col:BK_COL[r%BK_COL.length],hit:0}); } });
   const lives=(BK&&n>0)?BK.lives:3;
-  BK={W:W,Hh:Hh,lv:n,bricks:bricks,pw:78,px:W/2,drops:[],balls:[],lives:lives,
-      wide:0,slow:0,spd:4.4+n*0.25,stuck:true,go:false,shake:0};
-  BK.balls=[{x:W/2,y:Hh-40,vx:0,vy:0}];
-  const cv=gameCanvas('🧱 '+H('שובר לבנים','Brick Breaker'),W,Hh,footHint(H('גררו את המחבט · לחצו לשיגור','Drag the paddle · tap to launch')));
+  BK={W:W,Hh:Hh,lv:n,bricks:bricks,pw:78,px:W/2,drops:[],balls:[],parts:[],lives:lives,
+      bg:BK_BG[n%BK_BG.length],wide:0,slow:0,fire:0,spd:4.4+n*0.22,stuck:true,go:false,shake:0,
+      stars:Array.from({length:34},function(){ return {x:Math.random()*W,y:Math.random()*Hh,s:Math.random()*1.6+0.4}; })};
+  BK.balls=[{x:W/2,y:Hh-40,vx:0,vy:0,tr:[]}];
+  const cv=gameCanvas('🧱 '+H('שובר לבנים','Brick Breaker'),W,Hh,
+    footHint(H('גררו את המחבט · לחצו לשיגור','Drag the paddle · tap to launch'))
+    +`<div class="kbd"><b>← →</b> ${H('מחבט','paddle')} · <b>Space</b> ${H('שיגור','launch')}</div>`);
   if(!cv) return; cv.style.touchAction='none';
-  const mv=function(e){ const p=ngPos(cv,e); BK.px=Math.max(BK.pw/2,Math.min(BK.W-BK.pw/2,p.x)); };
+  const mv=function(e){ const p=ngPos(cv,e); BK.px=Math.max(bkPad()/2,Math.min(BK.W-bkPad()/2,p.x)); };
   cv.onpointerdown=function(e){ e.preventDefault(); mv(e); bkLaunch(); };
   cv.onpointermove=function(e){ if(e.pressure>0||e.buttons||e.pointerType==='touch') mv(e); };
   ngEvery(20,bkStep); bkDraw(); }
-function bkLaunch(){ const B=BK; if(!B||!B.stuck) return; B.stuck=false;
+function bkLaunch(){ const B=BK; if(!B||!B.stuck||B.go) return; B.stuck=false;
   B.balls[0].vx=B.spd*(Math.random()<.5?-.45:.45); B.balls[0].vy=-B.spd; tone(700,0,.07); }
 function bkPad(){ return BK.pw*(BK.wide>0?1.55:1); }
+function bkBoom(k){ const B=BK; for(let i=0;i<10;i++){ const a=Math.random()*6.283, v=1.5+Math.random()*3.5;
+    B.parts.push({x:k.x+k.w/2,y:k.y+k.h/2,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,c:k.col,t:22+Math.random()*10}); }
+  if(B.parts.length>150) B.parts.splice(0,B.parts.length-150); }
 function bkLife(){ const B=BK; B.lives--; buzz(); flash('💔'); B.shake=12;
   if(B.lives<=0){ B.go=true; stopArcade(); return setTimeout(()=>arcGameOver('🧱',arcScore,'brickGame'),400); }
-  B.stuck=true; B.wide=0; B.slow=0; B.balls=[{x:B.px,y:B.Hh-40,vx:0,vy:0}]; }
+  B.stuck=true; B.wide=0; B.slow=0; B.fire=0; B.balls=[{x:B.px,y:B.Hh-40,vx:0,vy:0,tr:[]}]; }
 function bkStep(){ const B=BK; if(!B||curGame!=='brk'||B.go) return;
-  if(NGK.ArrowLeft) B.px=Math.max(bkPad()/2,B.px-7);
-  if(NGK.ArrowRight) B.px=Math.min(B.W-bkPad()/2,B.px+7);
-  if(B.wide>0) B.wide--; if(B.slow>0) B.slow--; if(B.shake>0) B.shake--;
+  if(NGK.ArrowLeft) B.px=Math.max(bkPad()/2,B.px-8);
+  if(NGK.ArrowRight) B.px=Math.min(B.W-bkPad()/2,B.px+8);
+  if(B.wide>0) B.wide--; if(B.slow>0) B.slow--; if(B.fire>0) B.fire--; if(B.shake>0) B.shake--;
   const py=B.Hh-26, hpw=bkPad()/2, mul=(B.slow>0?0.62:1);
   if(B.stuck){ B.balls[0].x=B.px; B.balls[0].y=py-12; }
   for(let n=B.balls.length-1;n>=0;n--){ const b=B.balls[n]; if(B.stuck) break;
-    const steps=2; for(let s=0;s<steps;s++){
-      b.x+=b.vx*mul/steps; b.y+=b.vy*mul/steps;
+    b.tr.push({x:b.x,y:b.y}); if(b.tr.length>7) b.tr.shift();
+    for(let s=0;s<2;s++){
+      b.x+=b.vx*mul/2; b.y+=b.vy*mul/2;
       if(b.x<7){ b.x=7; b.vx=Math.abs(b.vx); tone(520,0,.04); }
       if(b.x>B.W-7){ b.x=B.W-7; b.vx=-Math.abs(b.vx); tone(520,0,.04); }
       if(b.y<30){ b.y=30; b.vy=Math.abs(b.vy); tone(520,0,.04); }
       if(b.vy>0 && b.y>=py-7 && b.y<=py+10 && b.x>B.px-hpw-6 && b.x<B.px+hpw+6){
-        const off=(b.x-B.px)/hpw; const sp=Math.hypot(b.vx,b.vy)||B.spd;
-        let ang=off*1.05; if(Math.abs(ang)<0.22) ang=(ang<0?-0.22:0.22);   // אף פעם לא אנכי לגמרי — מונע כדור תקוע
+        const off=(b.x-B.px)/hpw, sp=Math.hypot(b.vx,b.vy)||B.spd;
+        let ang=off*1.05; if(Math.abs(ang)<0.22) ang=(ang<0?-0.22:0.22);   // אף פעם לא אנכי — מונע כדור תקוע
         b.vx=Math.sin(ang)*sp; b.vy=-Math.abs(Math.cos(ang)*sp); b.y=py-8; tone(640,0,.05); }
       for(let i=0;i<B.bricks.length;i++){ const k=B.bricks[i];
         const cx=Math.max(k.x,Math.min(b.x,k.x+k.w)), cy=Math.max(k.y,Math.min(b.y,k.y+k.h));
         const dx=b.x-cx, dy=b.y-cy; if(dx*dx+dy*dy>49) continue;
-        const ovx=(k.w/2+7)-Math.abs(b.x-(k.x+k.w/2)), ovy=(k.h/2+7)-Math.abs(b.y-(k.y+k.h/2));
-        if(ovy<=ovx){ b.vy=-Math.abs(b.vy)*(b.y<k.y+k.h/2?1:-1); b.y+=(b.y<k.y+k.h/2?-ovy:ovy); }
-        else { b.vx=-Math.abs(b.vx)*(b.x<k.x+k.w/2?1:-1); b.x+=(b.x<k.x+k.w/2?-ovx:ovx); }
-        k.hp--; arcScore+=10; tone(760-k.hp*90,0,.05);
-        if(k.hp<=0){ B.bricks.splice(i,1); arcScore+=10;
+        if(B.fire<=0){   // כדור אש עובר דרך הלבנים בלי להקפיץ
+          const ovx=(k.w/2+7)-Math.abs(b.x-(k.x+k.w/2)), ovy=(k.h/2+7)-Math.abs(b.y-(k.y+k.h/2));
+          if(ovy<=ovx){ b.vy=-Math.abs(b.vy)*(b.y<k.y+k.h/2?1:-1); b.y+=(b.y<k.y+k.h/2?-ovy:ovy); }
+          else { b.vx=-Math.abs(b.vx)*(b.x<k.x+k.w/2?1:-1); b.x+=(b.x<k.x+k.w/2?-ovx:ovx); } }
+        k.hp-=(B.fire>0?4:1); k.hit=6; arcScore+=10; tone(760-k.hp*90,0,.05);
+        if(k.hp<=0){ bkBoom(k); B.bricks.splice(i,1); arcScore+=10;
           if(Math.random()<0.15){ const d=rnd(BK_DROP); B.drops.push({x:k.x+k.w/2,y:k.y+k.h/2,e:d.e,k:d.k}); } }
         break; } }
     if(b.y>B.Hh+12){ B.balls.splice(n,1); if(!B.balls.length){ bkLife(); return; } } }
   for(let n=B.drops.length-1;n>=0;n--){ const d=B.drops[n]; d.y+=2.4;
     if(d.y>py-14 && d.y<py+14 && Math.abs(d.x-B.px)<hpw+14){ B.drops.splice(n,1); chime(); flash(d.e); arcScore+=25;
       if(d.k==='wide') B.wide=600; else if(d.k==='slow') B.slow=500; else if(d.k==='life') B.lives++;
+      else if(d.k==='fire') B.fire=420;
       else { const src=B.balls[0]; const sp=Math.hypot(src.vx,src.vy)||B.spd;
-             for(let a=0;a<2;a++){ const ag=(a?1:-1)*0.75; B.balls.push({x:src.x,y:src.y,vx:Math.sin(ag)*sp,vy:-Math.abs(Math.cos(ag)*sp)}); } }
+             for(let a=0;a<2;a++){ const ag=(a?1:-1)*0.75;
+               B.balls.push({x:src.x,y:src.y,vx:Math.sin(ag)*sp,vy:-Math.abs(Math.cos(ag)*sp),tr:[]}); } }
       continue; }
     if(d.y>B.Hh+14) B.drops.splice(n,1); }
+  B.parts=B.parts.filter(function(p){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.22; p.vx*=0.99; return (--p.t)>0; });
+  B.bricks.forEach(function(k){ if(k.hit>0) k.hit--; });
   if(!B.bricks.length){ B.go=true; stopArcade(); confetti(); chime(); return setTimeout(bkWon,450); }
   const sc=document.getElementById('arcsc'); if(sc && sc.textContent!=String(arcScore)) sc.textContent=arcScore;
   bkDraw(); }
@@ -4353,28 +4432,47 @@ function bkWon(){ const B=BK; if(!B) return; const nx=B.lv+1;
     <div class="speak-hint" style="margin:6px 0 14px">❤️ ${B.lives} · ${H('הלבנים הבאות קשוחות יותר','Next bricks are tougher')}</div>
     <button class="replay" style="background:#5b8def;box-shadow:0 5px 0 #3a6fd8;color:#fff" onclick="bkLevel(${nx})">${H('שלב','Level')} ${nx+1} ▶</button><br>
     <button class="replay" style="margin-top:12px" onclick="arcBack()">${t('b_menu')}</button></div></div>`; }
+function bkShade(hex,f){ const n=parseInt(hex.slice(1),16);
+  const r=Math.round(((n>>16)&255)*f), g=Math.round(((n>>8)&255)*f), b=Math.round((n&255)*f);
+  return 'rgb('+Math.min(255,r)+','+Math.min(255,g)+','+Math.min(255,b)+')'; }
 function bkDraw(){ const B=BK, cv=document.getElementById('cv'); if(!cv){ stopArcade(); return; }
   const c=cv.getContext('2d'); const sh=B.shake>0?(Math.random()*6-3):0;
   c.setTransform(1,0,0,1,sh,0);
-  c.fillStyle='#1b2340'; c.fillRect(-6,0,B.W+12,B.Hh);
-  for(let i=0;i<26;i++){ c.fillStyle='rgba(255,255,255,'+(0.12+(i%5)*0.05)+')'; c.fillRect((i*67)%B.W,(i*97)%B.Hh,2,2); }
+  const g=c.createLinearGradient(0,0,0,B.Hh); g.addColorStop(0,B.bg[0]); g.addColorStop(1,B.bg[1]);
+  c.fillStyle=g; c.fillRect(-8,0,B.W+16,B.Hh);
+  B.stars.forEach(function(s){ c.fillStyle='rgba(255,255,255,'+(0.12+s.s*0.16).toFixed(2)+')';
+    c.fillRect(s.x,s.y,s.s,s.s); });
   c.font='bold 15px system-ui,sans-serif'; c.textBaseline='middle';
   c.textAlign='left'; c.fillStyle='#ff9db2'; c.fillText('❤️ '+B.lives,8,15);
   c.textAlign='right'; c.fillStyle='#8ee6ff'; c.fillText(H('שלב','Level')+' '+(B.lv+1),B.W-8,15);
-  const COL=['#ff6b6b','#ffb547','#7ad3ff'];
-  B.bricks.forEach(function(k){ c.fillStyle=COL[Math.min(2,k.hp-1)]; roundRect(c,k.x,k.y,k.w,k.h,6); c.fill();
-    c.fillStyle='rgba(255,255,255,.35)'; c.fillRect(k.x+4,k.y+3,k.w-8,4);
-    if(k.hp>1){ c.fillStyle='rgba(0,0,0,.35)'; c.font='bold 12px system-ui,sans-serif'; c.textAlign='center'; c.fillText(String(k.hp),k.x+k.w/2,k.y+k.h/2+1); } });
+  B.bricks.forEach(function(k){
+    const lit=k.hit>0?1.35:1;
+    c.fillStyle=bkShade(k.col,0.55*lit); roundRect(c,k.x,k.y+3,k.w,k.h,6); c.fill();          // צל תחתון
+    c.fillStyle=bkShade(k.col,1*lit); roundRect(c,k.x,k.y,k.w,k.h-2,6); c.fill();
+    c.fillStyle='rgba(255,255,255,.42)'; roundRect(c,k.x+4,k.y+3,k.w-8,5,2.5); c.fill();      // ברק עליון
+    if(k.hp>1){ for(let i=0;i<Math.min(3,k.hp-1);i++){ c.fillStyle='rgba(255,255,255,.85)';
+      c.beginPath(); c.arc(k.x+k.w/2+(i-(Math.min(3,k.hp-1)-1)/2)*7,k.y+k.h-7,2.2,0,7); c.fill(); } } });
+  B.parts.forEach(function(p){ c.globalAlpha=Math.min(1,p.t/16); c.fillStyle=p.c;
+    c.fillRect(p.x-2,p.y-2,4,4); c.globalAlpha=1; });
   const hpw=bkPad()/2, py=B.Hh-26;
   c.fillStyle=B.wide>0?'#54d98c':'#ffd166'; roundRect(c,B.px-hpw,py-6,hpw*2,13,7); c.fill();
-  c.fillStyle='rgba(0,0,0,.18)'; c.fillRect(B.px-hpw+4,py+3,hpw*2-8,3);
-  B.balls.forEach(function(b){ c.fillStyle='#fff'; c.beginPath(); c.arc(b.x,b.y,7,0,7); c.fill();
-    c.fillStyle='rgba(120,190,255,.85)'; c.beginPath(); c.arc(b.x-2,b.y-2,3,0,7); c.fill(); });
+  c.fillStyle='rgba(255,255,255,.45)'; roundRect(c,B.px-hpw+4,py-4,hpw*2-8,4,2); c.fill();
+  B.balls.forEach(function(b){
+    b.tr.forEach(function(t,i){ c.globalAlpha=(i+1)/(b.tr.length*3);
+      c.fillStyle=B.fire>0?'#ff9f43':'#9fd8ff'; c.beginPath(); c.arc(t.x,t.y,5,0,7); c.fill(); });
+    c.globalAlpha=1;
+    if(B.fire>0){ c.fillStyle='rgba(255,140,50,.55)'; c.beginPath(); c.arc(b.x,b.y,12,0,7); c.fill(); }
+    c.fillStyle=B.fire>0?'#ffd166':'#fff'; c.beginPath(); c.arc(b.x,b.y,7,0,7); c.fill();
+    c.fillStyle=B.fire>0?'rgba(255,80,0,.8)':'rgba(120,190,255,.85)';
+    c.beginPath(); c.arc(b.x-2,b.y-2,3,0,7); c.fill(); });
   c.font='22px serif'; c.textAlign='center';
   B.drops.forEach(function(d){ c.fillText(d.e,d.x,d.y); });
-  if(B.stuck){ c.fillStyle='rgba(255,255,255,.9)'; c.font='bold 15px system-ui,sans-serif';
-    c.fillText(H('לחצו לשיגור הכדור','Tap to launch'),B.W/2,B.Hh-70); }
-  if(B.slow>0){ c.textAlign='left'; c.font='16px serif'; c.fillText('🐢',8,B.Hh-10); }
+  if(B.stuck){ c.fillStyle='rgba(255,255,255,.92)'; c.font='bold 15px system-ui,sans-serif';
+    c.fillText(H('לחצו או רווח לשיגור','Tap or Space to launch'),B.W/2,B.Hh-70); }
+  c.textAlign='left'; c.font='15px serif';
+  let ix=8; if(B.slow>0){ c.fillText('🐢',ix,B.Hh-10); ix+=20; }
+  if(B.fire>0){ c.fillText('🔥',ix,B.Hh-10); ix+=20; }
+  if(B.wide>0){ c.fillText('🟩',ix,B.Hh-10); }
   c.setTransform(1,0,0,1,0,0); }
 
 // ============ 🚀 מגן החלל — גלים, מפלצות חלל, בוסים ובונוסים ============
@@ -4385,7 +4483,8 @@ function spaceGame(){ stopArcade(); curGame='spc'; arcScore=0;
   SP={W:W,Hh:Hh,x:W/2,lives:3,inv:0,wave:0,foes:[],shots:[],ebul:[],drops:[],boss:null,
       fx:0,fdir:1,fy:0,cd:0,triple:0,shield:0,rest:40,go:false,stars:[]};
   for(let i=0;i<34;i++) SP.stars.push({x:Math.random()*W,y:Math.random()*Hh,s:0.5+Math.random()*1.4});
-  const cv=gameCanvas('🚀 '+H('מגן החלל','Space Guard'),W,Hh,footHint(H('גררו כדי לזוז — היורה פועל לבד','Drag to move — it shoots for you')));
+  const cv=gameCanvas('🚀 '+H('מגן החלל','Space Guard'),W,Hh,footHint(H('גררו כדי לזוז — היורה פועל לבד','Drag to move — it shoots for you'))
+    +`<div class="kbd"><b>← →</b> ${H('תנועה','move')}</div>`);
   if(!cv) return; cv.style.touchAction='none';
   const mv=function(e){ const p=ngPos(cv,e); SP.x=Math.max(22,Math.min(W-22,p.x)); };
   cv.onpointerdown=function(e){ e.preventDefault(); mv(e); };
@@ -4484,7 +4583,8 @@ function bsLevel(lv){ stopArcade(); curGame='bs';
   const rows=Math.min(7,3+lv);
   for(let r=0;r<rows;r++) BS.g.push(Array.from({length:bsRowN(r)},function(){ return Math.floor(Math.random()*BS.ncol); }));
   BS.cur=bsPick(); BS.nxt=bsPick();
-  const cv=gameCanvas('🫧 '+H('יורה בועות','Bubble Shooter'),BS.W,BS.Hh,footHint(H('כוונו ושחררו — 3 באותו צבע מתפוצצות','Aim and release — 3 of a colour pop')));
+  const cv=gameCanvas('🫧 '+H('יורה בועות','Bubble Shooter'),BS.W,BS.Hh,footHint(H('כוונו ושחררו — 3 באותו צבע מתפוצצות','Aim and release — 3 of a colour pop'))
+    +`<div class="kbd"><b>← →</b> ${H('כיוון','aim')} · <b>Space</b> ${H('ירי','shoot')}</div>`);
   if(!cv) return; cv.style.touchAction='none';
   const aim=function(e){ const p=ngPos(cv,e); const dx=p.x-BS.W/2, dy=p.y-(BS.Hh-42);
     let a=Math.atan2(dy,dx); if(a>-0.45) a=(dx>0?-0.45:-Math.PI+0.45); BS.ang=a; bsDraw(); };
@@ -4497,6 +4597,10 @@ function bsPick(){ const seen={}; let any=false;
   BS.g.forEach(function(row){ row.forEach(function(v){ if(v!=null){ seen[v]=1; any=true; } }); });
   const list=any?Object.keys(seen).map(Number):[0,1,2];
   return rnd(list); }
+function bsKeyAim(dir){ const B=BS; if(!B||B.go||curGame!=='bs') return;
+  let a=B.ang+dir*0.06;
+  a=Math.max(-Math.PI+0.45,Math.min(-0.45,a));
+  B.ang=a; tone(600,0,.02); bsDraw(); }
 function bsShoot(){ const B=BS; if(!B||B.fly||B.go||curGame!=='bs') return;
   B.fly={x:B.W/2,y:B.Hh-42,vx:Math.cos(B.ang)*9,vy:Math.sin(B.ang)*9,col:B.cur};
   B.cur=B.nxt; B.nxt=bsPick(); tone(700,0,.05); }
@@ -4632,6 +4736,7 @@ function tgRender(){ const T=TG; if(!T) return;
       ${ngHud(`<span>${H('ניקוד','Score')} <b>${T.score}</b></span><span>${H('החליקו לכל כיוון','Swipe any way')}</span>`)}
       <div class="tggrid" id="tggrid">${cells}</div>
       <div class="speak-hint">${H('שני מספרים זהים נדבקים לאחד גדול','Two equal numbers merge into a bigger one')}</div>
+      <div class="kbd"><b>← ↑ ↓ →</b> ${H('הזזה','move')}</div>
       ${dpad('tgMove')}
     </div></div>`;
   const gr=document.getElementById('tggrid'); if(!gr) return;
@@ -4674,6 +4779,8 @@ function pzAdd(i){ const P=PZ; if(!P||P.phase!=='build'||curGame!=='pizza') retu
   if(P.pizza.length>=6){ buzz(); return; }
   const pool=PZ_TOP.slice(0,Math.min(PZ_TOP.length,3+P.day));
   P.pizza.push(pool[i]); tone(520+P.pizza.length*40,0,.05); pzRender(); }
+function pzKeyGo(){ const P=PZ; if(!P||curGame!=='pizza') return;
+  if(P.phase==='build') pzBake(); else if(P.phase==='baked') pzServe(); else buzz(); }
 function pzClear(){ const P=PZ; if(!P||P.phase!=='build') return; P.pizza=[]; tone(300,0,.07); pzRender(); }
 function pzBake(){ const P=PZ; if(!P||P.phase!=='build') return;
   if(!P.pizza.length){ buzz(); return; }
@@ -4722,6 +4829,7 @@ function pzRender(){ const P=PZ; if(!P) return;
       <div class="pztray">${pool.map(function(e,i){ return `<button class="pzbtn" onclick="pzAdd(${i})">${e}</button>`; }).join('')}</div>
       <div class="pzacts">${act}</div>
       <div class="speak-hint" style="font-size:13px">${H('הרכיבו בדיוק את ההזמנה, אפו — והגישו לפני שנגמרת הסבלנות','Build the exact order, bake it, serve before patience runs out')}</div>
+      <div class="kbd"><b>1-8</b> ${H('תוספת','topping')} · <b>Space</b> ${H('לתנור / להגיש','bake / serve')} · <b>Backspace</b> ${H('מחדש','clear')}</div>
     </div></div>`; }
 function playEnded(){ backTo=null; const p=prof(); p.playEnd=0; save(); confetti();
   app.innerHTML=`<div class="screen">${topbar()}<div class="card"><div class="prompt">${H('נגמר זמן המשחק! 🎮⏰','Play time is over! 🎮⏰')}</div><div class="speak-hint" style="margin:8px 0 12px">${H('בואו נלמד עוד כדי להרוויח עוד זמן','Let us learn more to earn more time')}</div><button class="replay" style="background:#11998e;box-shadow:0 5px 0 #0c7a6f;color:#fff" onclick="pathScreen()">${H('למסלול ▶','To the path ▶')}</button></div></div>`; }
