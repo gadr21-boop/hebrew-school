@@ -383,6 +383,7 @@ function imgFallback(el,key){ try{ el.insertAdjacentHTML('afterend', artSVG(key)
 // ================= שמירת נתונים =================
 const KEY = "betSeferIvrit_v1";
 const PATH_VERSION=4;
+const BUILD_VER='20260908170651'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
 let data = null;
 function defaultData(){
   return { current:null, voiceURI:null, lang:"he", profiles:{} };
@@ -2958,6 +2959,7 @@ function pathScreen(){
     <div class="path-wrap" style="width:${W}px;height:${Hgt}px">${inner}</div>
     <button class="replay" style="background:#8e2de2;box-shadow:0 5px 0 #6a1bb0;color:#fff;margin-top:4px" onclick="focusPractice()">💪 ${H('תרגול ממוקד','Focus Practice')}</button>
     <button class="replay" style="background:#f6c343;box-shadow:0 5px 0 #d6a01f;color:#6b4f00;margin-top:12px" onclick="startPlay()">🎮 ${H('זמן משחק','Play time')} (🪙 ${p.coins||0})</button>
+    <div style="font-size:10px;color:#cfcfcf;margin-top:12px;direction:ltr">v${BUILD_VER}</div>
   </div>`;
   app.innerHTML=html;
   if(p._v4note){ delete p._v4note; save(); }
@@ -4702,7 +4704,14 @@ loadRecordings();
 if(window.speechSynthesis){ speechSynthesis.onvoiceschanged=()=>loadVoices(); }
 function appRoute(){ bootScreen(); }
 authBoot();
-if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+if('serviceWorker' in navigator){ window.addEventListener('load',function(){
+  var hadCtrl=!!navigator.serviceWorker.controller, reloaded=false;
+  navigator.serviceWorker.register('sw.js').then(function(reg){ try{ reg.update(); }catch(e){} }).catch(function(){});
+  // כשגרסה חדשה משתלטת — רענון אחד אוטומטי, כדי שהילד לא יישאר על גרסה ישנה
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(!hadCtrl||reloaded) return; reloaded=true; try{ location.reload(); }catch(e){}
+  });
+}); }
 </script>
 </body>
 </html>
