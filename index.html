@@ -441,7 +441,7 @@ function imgFallback(el,key){ try{ el.insertAdjacentHTML('afterend', artSVG(key)
 // ================= שמירת נתונים =================
 const KEY = "betSeferIvrit_v1";
 const PATH_VERSION=4;
-const BUILD_VER='20260908180205'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
+const BUILD_VER='20260908183254'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
 let data = null;
 function defaultData(){
   return { current:null, voiceURI:null, lang:"he", profiles:{} };
@@ -2989,7 +2989,7 @@ function abcStrip(p){ const cs=ABC_ORDER.split(''); let known=0;
   return `<div style="margin:4px auto 2px;max-width:366px"><div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;direction:rtl">${cells}</div>
     <div style="font-size:12px;color:#999;margin-top:3px">${H('האלף-בית שלי','My alphabet')}: ${known}/22</div></div>`; }
 function pathScreen(){
-  clearAdv(); backTo=null; if(typeof stopArcade==='function') stopArcade(); if(window.speechSynthesis) speechSynthesis.cancel();
+  clearAdv(); backTo=null; _playCtx=false; if(typeof stopArcade==='function') stopArcade(); if(window.speechSynthesis) speechSynthesis.cancel();
   const p=prof();
   if(!p.path) p.path={progress:{},fails:{}}; if(!p.path.fails) p.path.fails={};
   if(!p.placementDone){ p.placementDone=true; save(); }
@@ -4852,7 +4852,7 @@ function pzRender(){ const P=PZ; if(!P) return;
       <div class="speak-hint" style="font-size:13px">${H('הרכיבו בדיוק את ההזמנה, אפו — והגישו לפני שנגמרת הסבלנות','Build the exact order, bake it, serve before patience runs out')}</div>
       <div class="kbd"><b>1-8</b> ${H('תוספת','topping')} · <b>Space</b> ${H('לתנור / להגיש','bake / serve')} · <b>Backspace</b> ${H('מחדש','clear')}</div>
     </div></div>`; }
-function playEnded(){ backTo=null; const p=prof(); p.playEnd=0; save(); confetti();
+function playEnded(){ backTo=null; _playCtx=false; const p=prof(); p.playEnd=0; save(); confetti();
   app.innerHTML=`<div class="screen">${topbar()}<div class="card"><div class="prompt">${H('נגמר זמן המשחק! 🎮⏰','Play time is over! 🎮⏰')}</div><div class="speak-hint" style="margin:8px 0 12px">${H('בואו נלמד עוד כדי להרוויח עוד זמן','Let us learn more to earn more time')}</div><button class="replay" style="background:#11998e;box-shadow:0 5px 0 #0c7a6f;color:#fff" onclick="pathScreen()">${H('למסלול ▶','To the path ▶')}</button></div></div>`; }
 
 // ----- מבחן רמה -----
@@ -5147,7 +5147,7 @@ function blendRender(){ if(!BLEND_SETS.length) return worldsHub(); const set=BLE
     <div class="pool" style="margin-top:10px">${set.ids.map((id,i)=>`<button class="tile" onclick="blendPick(${i})">${BLEND_HINT[i]}</button>`).join('')}</div>
     <button class="replay" style="margin-top:20px;background:#43cea2;box-shadow:0 5px 0 #1aa97f;color:#fff" onclick="blendNext()">${H('עיצור הבא ▶','Next ▶')}</button></div></div>`;
 }
-function blendPick(i){ const set=BLEND_SETS[BLEND_I]; const it=READ_BY[set.ids[i]]; if(!it) return; const sl=document.getElementById('blendSlot'); if(sl){ sl.textContent=it.he; sl.style.color='#43cea2'; setTimeout(()=>{ const s2=document.getElementById('blendSlot'); if(s2) s2.style.color='#5b8def'; },650); } try{ chime(); }catch(e){} flash('🎵'); sayReadKey(it.say); blendPicks++; if(blendPicks>=6 && !blendCoined){ blendCoined=true; const g=awardLearnCoin(1); if(g>0){ setTimeout(()=>{ flash('🪙'); try{ tone(880,0,.12); tone(1180,.08,.16); }catch(e){} },720); } } }
+function blendPick(i){ const set=BLEND_SETS[BLEND_I]; const it=READ_BY[set.ids[i]]; if(!it) return; const sl=document.getElementById('blendSlot'); if(sl){ sl.textContent=it.he; sl.style.color='#43cea2'; setTimeout(()=>{ const s2=document.getElementById('blendSlot'); if(s2) s2.style.color='#5b8def'; },650); } try{ chime(); }catch(e){} flash('🎵'); sayReadKey(it.say); blendPicks++; }   // אין כאן תשובה נכונה למדוד — צעצוע חקירה חינמי, בלי מטבע
 function blendNext(){ BLEND_I=(BLEND_I+1)%BLEND_SETS.length; blendRender(); }
 let WQ=null;
 function numPts(n,k){ const s=new Set([n]); while(s.size<k){ s.add(1+Math.floor(Math.random()*10)); } return shuffle(Array.from(s)); }
@@ -5193,7 +5193,7 @@ load();
 loadVoices();
 loadRecordings();
 if(window.speechSynthesis){ speechSynthesis.onvoiceschanged=()=>loadVoices(); }
-function appRoute(){ if(typeof stopArcade==='function') stopArcade(); bootScreen(); }
+function appRoute(){ if(typeof stopArcade==='function') stopArcade(); _playCtx=false; bootScreen(); }
 authBoot();
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){
   var hadCtrl=!!navigator.serviceWorker.controller, reloaded=false;
