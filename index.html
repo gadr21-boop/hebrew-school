@@ -441,14 +441,26 @@ function imgFallback(el,key){ try{ el.insertAdjacentHTML('afterend', artSVG(key)
 // ================= שמירת נתונים =================
 const KEY = "betSeferIvrit_v1";
 const PATH_VERSION=4;
-const BUILD_VER='20260908152026'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
+const BUILD_VER='20260908180205'; // מוחלף אוטומטית בכל דחיפה לאתר (deploy)
 let data = null;
 function defaultData(){
   return { current:null, voiceURI:null, lang:"he", profiles:{} };
 }
+// שינוי הערך הזה מאפס את הפרופילים בפעם הבאה שהאתר נטען, בכל המכשירים.
+const RESET_TOKEN='2026-09-08-ella-yogev';
 function load(){ try{ data = JSON.parse(localStorage.getItem(KEY)); }catch(e){ data=null; } if(!data||!data.profiles) data = defaultData(); lang = data.lang || "he";
   // שחזור גיבוי מקומי של קוד ההורים (אם סנכרון דרס אותו)
   if(!(data.parentPin&&data.parentPin.hash)){ try{ const bk=JSON.parse(localStorage.getItem('hebParentPin')||'null'); if(bk&&bk.hash&&(!data.parentPin||((bk.ts||0)>(data.parentPin.ts||0)))) data.parentPin=bk; }catch(e){} }
+  // ---- איפוס חד-פעמי לפי בקשת ההורה: רק אלה ויוגב, מאפס ----
+  // רץ פעם אחת לכל מכשיר. האסימון נשמר ונדחף גם לענן, אז זה לא חוזר.
+  if(data.resetToken!==RESET_TOKEN){
+    data.profiles={
+      ella:{ id:'ella', name:'אלה',  av:'👧', stars:0, level:2, stats:{}, coins:0 },
+      yogev:{ id:'yogev', name:'יוגב', av:'🧒', stars:0, level:2, stats:{}, coins:0 }
+    };
+    data.current='ella'; data.resetToken=RESET_TOKEN; data._ts=Date.now();
+    try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){}
+  }
   Object.keys(data.profiles).forEach(id=>{ const p=data.profiles[id]; if(!p.level) p.level=2; if(!p.stats) p.stats={};
     if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={}; if(p.xp==null) p.xp=0; if(!p.streak) p.streak={count:0,last:null}; if(p.placementDone==null) p.placementDone=false; if(p.coins==null) p.coins=0; if(p.playEnd==null) p.playEnd=0;
     if(p.pathVersion==null||p.pathVersion<2){ p.path={progress:{},fails:{}}; p.unitsDone={}; p.placementDone=true; }
@@ -505,7 +517,7 @@ async function authRefresh(){ const a=getAuth(); if(!a||!a.refresh_token) return
 function authLogout(){ clearAuth(); authScreen('login'); }
 async function ensureToken(){ const a=getAuth(); if(!a) return null; if(a.expires_at && a.expires_at < Date.now()+30000){ await authRefresh(); } return getAuth(); }
 // ----- ענן מאומת (per-user, RLS על user_progress) -----
-async function cloudPullAuth(){ const a=await ensureToken(); if(!a||!a.access_token) return false; try{ const r=await fetch(SUPA_URL+'/rest/v1/user_progress?select=data,updated_at&limit=1',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+a.access_token}}); if(!r.ok) return false; const rows=await r.json(); const d=rows&&rows[0]&&rows[0].data; if(d&&d.profiles&&Object.keys(d.profiles).length>0&&((d._ts||0)>=(data._ts||0))){ const _localPin=data.parentPin; data=d; if(_localPin&&(!data.parentPin||((_localPin.ts||0)>(data.parentPin.ts||0)))){ data.parentPin=_localPin; } try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch(e){} return true; } }catch(e){} return false; }
+async function cloudPullAuth(){ const a=await ensureToken(); if(!a||!a.access_token) return false; try{ const r=await fetch(SUPA_URL+'/rest/v1/user_progress?select=data,updated_at&limit=1',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+a.access_token}}); if(!r.ok) return false; const rows=await r.json(); const d=rows&&rows[0]&&rows[0].data; if(d&&d.profiles&&Object.keys(d.profiles).length>0&&((d._ts||0)>=(data._ts||0))){ const _localPin=data.parentPin; data=d; if(_localPin&&(!data.parentPin||((_localPin.ts||0)>(data.parentPin.ts||0)))){ data.parentPin=_localPin; } try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch(e){} load(); return true; } }catch(e){} return false; }
 let _cloudT=null;
 function cloudPush(){ if(!getAuth()) return; clearTimeout(_cloudT); _cloudT=setTimeout(cloudPushAuth,1500); }
 async function cloudPushAuth(){ const a=await ensureToken(); if(!a||!a.access_token||!a.uid) return; try{ await fetch(SUPA_URL+'/rest/v1/user_progress?on_conflict=user_id',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+a.access_token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{user_id:a.uid,data:data,updated_at:new Date().toISOString()}])}); }catch(e){} }
@@ -636,8 +648,14 @@ function setLevel(L){ const p=prof(); if(p){ p.level=L; save(); } home(); }
 
 // ביטול טיימרים תלויים בעת מעבר מסך (תיקון: כפתור חזרה לא יקפיץ שוב למשחק)
 let gameTimer=null;
-function adv(fn,ms){ clearAdv(); gameTimer=setTimeout(()=>{ gameTimer=null; fn(); },ms); }
-function clearAdv(){ if(gameTimer){ clearTimeout(gameTimer); gameTimer=null; } }
+// נעילת תשובה: ילד שמקיש מהר על אותה תשובה נספר פעם אחת. הנעילה נפתחת
+// כשהשאלה הבאה עולה (בטיימר של adv) או כשעוזבים את המסך (clearAdv).
+let _ansUsed=false;
+function ansTake(){ if(_ansUsed) return false; _ansUsed=true; return true; }
+function ansOpen(){ _ansUsed=false; }
+function adv(fn,ms){ if(gameTimer){ clearTimeout(gameTimer); }   // בלי clearAdv — הוא היה פותח את הנעילה מיד
+  gameTimer=setTimeout(()=>{ gameTimer=null; _ansUsed=false; fn(); },ms); }
+function clearAdv(){ if(gameTimer){ clearTimeout(gameTimer); gameTimer=null; } _ansUsed=false; }
 
 function record(cat, item, ok){
   const p = prof(); if(!p) return;
@@ -1743,7 +1761,7 @@ function focusStep(){ const p=prof(); if(!FOC||FOC.idx>=FOC.n) return focusDone(
   const id=pickNext(p,pool,FOC.last); FOC.last=id; const info=FOC.info[id]||{type:'letters'};
   NODE={id:info.nodeId||id,type:info.type,ids:[id],last:null,taught:{},covered:{},att:0,cont:null,tIds:[],tIdx:0,tScore:0};
   app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="smartPath()">${t('b_menu')}</button><div class="who">💪 ${FOC.idx+1}/${FOC.n} · ✅ ${FOC.right}</div></div><div class="card">${buildQ(id,'focusAns')}</div></div>`; }
-function focusAns(btn,ok,id,form){ stopAudio(); const p=prof(); const res=onResult(p,id,ok,form); record(nodeCat(),id,ok); addXP(1); if(ok){ FOC.right++; if(btn)btn.classList.add('right'); praise(0.4); if(res.justMastered){ const g=awardLearnCoin(1); if(g) coinPop(g); } } else { if(btn)btn.classList.add('wrong'); nudge(); } FOC.idx++; setTimeout(focusStep,850); }
+function focusAns(btn,ok,id,form){ if(!ansTake()) return; stopAudio(); const p=prof(); const res=onResult(p,id,ok,form); record(nodeCat(),id,ok); addXP(1); if(ok){ FOC.right++; if(btn)btn.classList.add('right'); praise(0.4); if(res.justMastered){ const g=awardLearnCoin(1); if(g) coinPop(g); } } else { if(btn)btn.classList.add('wrong'); nudge(); } FOC.idx++; setTimeout(focusStep,850); }
 function focusDone(){ confetti(); if(window.speechSynthesis) sayPraise(true);
   const acc=FOC&&FOC.n?FOC.right/FOC.n:0; const earn=acc>=1?2:(acc>=0.8?1:0); const coinHTML=(FOC&&!FOC.awarded)?practiceCoinHTML(earn):''; if(FOC) FOC.awarded=true; const p=prof();
   app.innerHTML=`<div class="screen">${topbar()}<div class="card"><div class="prompt" style="font-weight:bold">💪 ${H('כל הכבוד! תרגלת את מה שהכי חשוב לך','Great focused practice!')} 🎉</div><div style="font-size:42px;font-weight:bold;color:#6a5acd">${FOC?FOC.right:0}/${FOC?FOC.n:0}</div>${coinHTML}<div style="font-size:15px;font-weight:bold;color:#6b4f00;background:#fff3c4;border-radius:50px;padding:5px 16px;display:inline-block;margin-top:4px">👛 ${p.coins||0} 🪙</div><br><button class="replay" style="background:#6a5acd;box-shadow:0 5px 0 #4e3fa0;color:#fff;margin-top:10px" onclick="focusPractice()">${H('עוד סבב 💪','Another round 💪')}</button><br><button class="replay" style="margin-top:12px" onclick="pathScreen()">${H('למסלול ▶','To the path ▶')}</button></div></div>`; }
@@ -1878,7 +1896,7 @@ function smTestMenu(){
 }
 let testDom=null,testIds=[],testIdx=0,testScore=0;
 function startTest(dom){
-  testDom=dom; testIdx=0; testScore=0;
+  testDom=dom; testIdx=0; testScore=0; _testPaid=false; ansOpen();
   if(dom==='math'){ testIds=shuffle(Object.keys(mathBank())).slice(0,6); }
   else { testIds=shuffle(HEB_LETTERS.map(x=>x.l)).slice(0,6); }
   testStep();
@@ -1899,12 +1917,13 @@ function testStep(){
     setTimeout(()=>speakLetter(d.say),350);
   }
 }
-function testAns(ok,id,form){
+function testAns(ok,id,form){ if(!ansTake()) return;
   const p=prof(); if(ok){ testScore++; chime(); flash("✅"); } else { buzz(); flash("🙈"); }
   onResult(p, testDom==='math'?id:id, ok, form); record(testDom==='math'?'math':'letters', id, ok);
-  testIdx++; setTimeout(testStep,900);
+  testIdx++; adv(testStep,900);
 }
-function testEnd(){
+let _testPaid=false;
+function testEnd(){ if(_testPaid) return; _testPaid=true;   // הגנה כפולה: גם אם נקרא פעמיים, משלמים פעם אחת
   confetti();
   const earn=testScore>=testIds.length?2:(testScore>=testIds.length-1?1:0); const coinHTML=practiceCoinHTML(earn);
   app.innerHTML=`<div class="screen">${topbar()}<div class="card">
@@ -2019,10 +2038,10 @@ function lessonTestStep(){
     setTimeout(()=>speakLetter(d.say),350);
   }
 }
-function lessonTestAns(ok,id,form,cat){
+function lessonTestAns(ok,id,form,cat){ if(!ansTake()) return;
   const p=prof(); if(ok){ LS.tScore++; chime(); flash("✅"); } else { buzz(); flash("🙈"); }
   onResult(p,id,ok,form); record(cat||(LS.dom==='math'?'math':'letters'),id,ok);
-  LS.tIdx++; setTimeout(lessonTestStep,850);
+  LS.tIdx++; adv(lessonTestStep,850);
 }
 function lessonReward(){
   confetti();
@@ -2389,7 +2408,8 @@ function startUnitTest(n){ const p=prof(); const unit=n._unit;
 function nodeAllow(){ const u=NODE_BY_ID[NODE.id]&&NODE_BY_ID[NODE.id]._unit; const idx=u?PATH_UNITS.indexOf(u):0; return cumAllow(idx<0?0:idx); }
 function heClusters(s){ const out=[]; for(const ch of String(s||'')){ if(ch>='א'&&ch<='ת'){ out.push({base:ch,full:ch}); } else if(out.length){ out[out.length-1].full+=ch; } } return out; }
 const ABC_ORDER='אבגדהוזחטיכלמנסעפצקרשת';
-function nodeLettersong(id){ const cert=(id==='ab12_cert'||id==='u12_cert'); const keys=HEB_LETTERS.map(x=>'L:'+x.l);
+let _songDone=null;
+function nodeLettersong(id){ _songDone=null; const cert=(id==='ab12_cert'||id==='u12_cert'); const keys=HEB_LETTERS.map(x=>'L:'+x.l);
   app.innerHTML=`<div class="screen">${nodeBar()}<div class="card">
     <div class="prompt" style="font-weight:bold">${cert?('🎓 '+H('תעודת קורא — כל הכבוד!','Reader certificate — well done!')):('🎵 '+H('שיר הא-ב','The ABC Song'))}</div>
     ${cert?'<div style="font-size:54px;margin:6px 0">🎓</div>':''}
@@ -2399,7 +2419,8 @@ function nodeLettersong(id){ const cert=(id==='ab12_cert'||id==='u12_cert'); con
   </div></div>`;
   setTimeout(function(){ try{ playSeq(keys); }catch(e){} },400);
 }
-function songComplete(id){ const p=prof(); if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={}; const pr=p.path.progress[id]||{}; const prevStars=pr.stars||0; const coinsEarned=Math.max(0,1-prevStars); jumpFromId=id; p.path.progress[id]={done:true,stars:Math.max(1,prevStars),bestAcc:1,ts:Date.now()}; if(coinsEarned) p.coins=(p.coins||0)+coinsEarned;
+function songComplete(id){ if(_songDone===id) return; _songDone=id;   // לחיצה אחת בלבד
+  const p=prof(); if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={}; const pr=p.path.progress[id]||{}; const prevStars=pr.stars||0; const coinsEarned=Math.max(0,1-prevStars); jumpFromId=id; p.path.progress[id]={done:true,stars:Math.max(1,prevStars),bestAcc:1,ts:Date.now()}; if(coinsEarned) p.coins=(p.coins||0)+coinsEarned;
   bumpStreak(); const hitDaily=dailyTick(); if(hitDaily) p.coins=(p.coins||0)+2;
   const _u=NODE_BY_ID[id]._unit; const _uAll=NODES.filter(n=>n._unit===_u).every(n=>{ const d=p.path.progress[n.id]; return d&&d.done; }); p.unitsDone=p.unitsDone||{}; const _uKey=_u.id||('u'+PATH_UNITS.indexOf(_u)); if(_uAll&&!p.unitsDone[_uKey]){ p.unitsDone[_uKey]=true; p.coins=(p.coins||0)+5; }
   save(); confetti(); setTimeout(confetti,300); try{ sayPraise(true); }catch(e){} pathScreen(); }
@@ -2809,7 +2830,7 @@ function nodeAsk(id){ if(NODE.type==='scramble'){ return nodeScramble(id,(ok,for
   if(form==='scramble_f'||nodeNeedsScramble(id)&&form!=='flash_build'){ return nodeScramble(id,(ok,f)=>nodeAns(null,ok!==false,id,f||'scramble'),scrambleMode(id,false)); }
   if(form==='flash_build'){ return flashBuild(id,(ok,f)=>nodeAns(null,ok!==false,id,f||'flash')); }
   NODE.curForm=form; app.innerHTML=`<div class="screen">${nodeBar()}<div class="card">${buildQ(id,'nodeAns')}</div></div>`; }
-function nodeAns(btn,ok,id,form){ stopAudio();
+function nodeAns(btn,ok,id,form){ if(!ansTake()) return; stopAudio();
   const p=prof(); NODE.covered[id]=true; onResult(p,id,ok,form); record(nodeCat(),id,ok); addXP(1);
   if(ok){ chime(); if(btn) btn.classList.add("right"); flash(rnd(PRAISE_EMO)); nodeSpeakAnswer(id); adv(nodeLearn,1000); }
   else { buzz(); if(btn) btn.classList.add("wrong"); flash(rnd(NUDGE_EMO)); nodeSpeakAnswer(id); adv(nodeLearn,1600); }
@@ -2866,9 +2887,9 @@ function nodeTestStep(){ if(NODE.tIdx>=NODE.tIds.length) return nodeReward();
   NODE.curForm=_tform;
   app.innerHTML=`<div class="screen"><div class="topbar"><button class="back-btn" onclick="pathScreen()">${t('b_menu')}</button><div class="who">📝 ${NODE.tIdx+1}/${NODE.tIds.length} · ⭐ ${NODE.tScore}</div></div><div class="card">${buildQ(id,'nodeTestAns')}</div></div>`;
 }
-function nodeTestAns(btn,ok,id,form){ stopAudio(); const p=prof(); if(ok){ NODE.tScore++; praise(0.4); } else { nudge(); }
+function nodeTestAns(btn,ok,id,form){ if(!ansTake()) return; stopAudio(); const p=prof(); if(ok){ NODE.tScore++; praise(0.4); } else { nudge(); }
   if(!NODE.curRev){ NODE.tOwn=(NODE.tOwn||0)+1; if(ok) NODE.tOwnOK=(NODE.tOwnOK||0)+1; }
-  onResult(p,id,ok,form); record(nodeCat(),id,ok); addXP(2); NODE.tIdx++; setTimeout(nodeTestStep,850); }
+  onResult(p,id,ok,form); record(nodeCat(),id,ok); addXP(2); NODE.tIdx++; adv(nodeTestStep,850); }
 function levelCap(p){ return (p&&p.age)?(AGE_CAP[p.age]||3):3; }
 // דינמיקת רמה: העלאה אחרי 3 מבחנים רצופים מצוינים (3 כוכבים, ≥90%); הורדה רק אחרי שהריכוך כבר הופעל ונכשל שוב
 function levelAdjust(p,isTest,stars,acc,pass,failsBefore,isCore){
@@ -2876,7 +2897,7 @@ function levelAdjust(p,isTest,stars,acc,pass,failsBefore,isCore){
     if((p.lvlStreak||0)>=3 && (p.level||2)<levelCap(p)){ p.level=(p.level||2)+1; p.lvlStreak=0; p.lvlEvent={dir:'up',level:p.level,ts:Date.now()}; return 'up'; } }
   if(!pass && isCore && failsBefore>=2 && (p.level||2)>1){ p.level=(p.level||2)-1; p.lvlStreak=0; p.lvlEvent={dir:'down',level:p.level,ts:Date.now()}; return 'down'; }
   return null; }
-function nodeReward(){
+function nodeReward(){ if(NODE._rewarded) return; NODE._rewarded=true;   // מזכים פעם אחת לכל ניסיון
   const p=prof(); if(!p.path) p.path={progress:{}}; if(!p.path.fails) p.path.fails={};
   const _node=NODE_BY_ID[NODE.id]||{}; const _core=isCoreReading(_node); const _isTest=_node.type==='test';
   // הציון נמדד רק על פריטי הצומת עצמו (שאלות החזרה לא מפילות), ולפי מספר טעויות ולא אחוז
@@ -4873,7 +4894,8 @@ function placementStep(){ if(PL.idx>=PLACEMENT.length) return placementDone();
     app.innerHTML=`${head}<div class="card"><div class="prompt">${H('מה ההפך?','What is the opposite?')}</div><div class="word-display" onclick="speak('${escq(q.w)}')">${q.w}</div><div class="options three">${opts.map(o=>`<button class="opt" onclick="placeAns(${o===ans},'${q.d}')">${o}</button>`).join("")}</div></div></div>`; setTimeout(()=>speak(q.w),300);
   }
 }
-function placeAns(ok,d){ if(!PL.res[d]) PL.res[d]=[0,0]; PL.res[d][1]++; if(ok){ PL.res[d][0]++; chime(); flash("✅"); } else { buzz(); flash("🙈"); } PL.idx++; setTimeout(placementStep,650); }
+function placeAns(ok,d){ if(!ansTake()) return;
+  if(!PL.res[d]) PL.res[d]=[0,0]; PL.res[d][1]++; if(ok){ PL.res[d][0]++; chime(); flash("✅"); } else { buzz(); flash("🙈"); } PL.idx++; adv(placementStep,650); }
 function placementDone(){
   const p=prof(); const sc=k=>(PL.res[k]&&PL.res[k][1])?PL.res[k][0]/PL.res[k][1]:0;
   const L=sc('letter'), R=sc('read'), ME=sc('matheasy'), MH=sc('mathhard'), TH=sc('think');
@@ -5157,7 +5179,8 @@ function worldQuizStep(){ const w=WORLD_BY[WQ.id]; if(!w||WQ.idx>=WQ.n) return w
     const optHTML=opts.map(o=>`<button class="opt" style="min-height:100px" onclick="worldAns(${o.id===target.id})">${worldVisual(w,o,64)}</button>`).join('');
     app.innerHTML=`${head}<div class="card"><div class="prompt">${H('איפה','Where is')} <b style="color:${w.color}">${H(target.he,target.en)}</b>?</div><button class="replay" style="padding:6px 14px;font-size:15px" onclick="speak('${escq(target.he)}')">🔊</button><div class="options three" style="margin-top:12px">${optHTML}</div></div></div>`;
     setTimeout(()=>speak(target.he),300); } }
-function worldAns(ok){ if(ok){ WQ.right++; praise(0.4); } else { nudge(); } WQ.idx++; setTimeout(worldQuizStep,700); }
+function worldAns(ok){ if(!ansTake()) return;
+  if(ok){ WQ.right++; praise(0.4); } else { nudge(); } WQ.idx++; adv(worldQuizStep,700); }
 function worldQuizDone(){ const w=WORLD_BY[WQ.id]; const p=prof(); const acc=WQ.n?WQ.right/WQ.n:0; const prev=p.worlds&&p.worlds[WQ.id]; const firstGood=acc>=0.7 && !(prev&&prev.done);
   const earned=firstGood?3:0; if(earned){ p.coins=(p.coins||0)+earned; } p.worlds=p.worlds||{}; p.worlds[WQ.id]={done:(prev&&prev.done)||acc>=0.7,best:Math.max(acc,(prev&&prev.best)||0),ts:Date.now()}; if(typeof addXP==='function') addXP(8); save(); confetti();
   app.innerHTML=`<div class="screen">${topbar()}<div class="card"><div class="prompt">${acc>=0.7?('🎉 '+H('כל הכבוד!','Great job!')):H('יפה! בואו נתאמן עוד','Nice! let us practice more')}</div>
